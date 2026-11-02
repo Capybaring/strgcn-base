@@ -7,6 +7,7 @@ import math
 import torch
 from torch import nn
 from torch.nn import functional as F
+from torch.utils.checkpoint import checkpoint
 
 from .TimeEmbedding import TimeEmbedding
 from .STRGCN_Layer import low_rank_graph_conv, masked_softmax
@@ -14,20 +15,20 @@ from .STRGCN_Layer import low_rank_graph_conv, masked_softmax
 HIST_EXO, HIST_ENDO, FUTURE_EXO, QUERY_ENDO = range(4)
 
 
-def relation_masks(timestamp, var_idx, node_type, valid):
+def relation_masks(timestamp, var_idx, node_type, valid, receiver_slice=slice(None)):
     """Return X-time, Y-time, X->Y masks. Queries NEVER send messages."""
     valid = valid.bool()
     exo = (node_type == HIST_EXO) | (node_type == FUTURE_EXO)
     endo = (node_type == HIST_ENDO) | (node_type == QUERY_ENDO)
     # j <= i; equal timestamps are allowed, as in the method definition.
-    causal = timestamp[:, None, :] <= timestamp[:, :, None]
+    causal = timestamp[:, None, :] <= timestamp[:, receiver_slice, None]
     source = valid & (node_type != QUERY_ENDO)
-    base = causal & valid[:, :, None] & source[:, None, :]
-    same = var_idx[:, :, None] == var_idx[:, None, :]
+    base = causal & valid[:, receiver_slice, None] & source[:, None, :]
+    same = var_idx[:, receiver_slice, None] == var_idx[:, None, :]
     return (
-        base & same & exo[:, :, None] & exo[:, None, :],
-        base & same & endo[:, :, None] & endo[:, None, :],
-        base & endo[:, :, None] & exo[:, None, :],
+        base & same & exo[:, receiver_slice, None] & exo[:, None, :],
+        base & same & endo[:, receiver_slice, None] & endo[:, None, :],
+        base & endo[:, receiver_slice, None] & exo[:, None, :],
     )
 
 
@@ -54,23 +55,45 @@ class DirectedRelationLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.norm = nn.LayerNorm(dim) if use_norm else nn.Identity()
 
-    def forward(self, h, p, var_idx, masks, valid):
-        time_logits = torch.einsum('bid,bjd->bij', p, p)
-        message = torch.zeros_like(h)
+    def _aggregate(self, h, p, var_idx, masks, receiver_slice=slice(None)):
+        time_logits = torch.einsum('bid,bjd->bij', p[:, receiver_slice], p)
+        message = torch.zeros_like(h[:, receiver_slice])
         for k, mask in enumerate(masks):
             logits = self.time_scale[k] * time_logits
             if self.cross:
-                support = torch.einsum('bid,bjd->bij', self.adj_U(var_idx),
+                support = torch.einsum('bid,bjd->bij', self.adj_U(var_idx[:, receiver_slice]),
                                        self.adj_V(var_idx))
                 logits = logits + self.var_scale * support / math.sqrt(self.adj_U.embedding_dim)
             adj = masked_softmax(logits, mask)
             message = message + low_rank_graph_conv(
                 h, adj, self.weight_T[k](p), self.weight_S[k](var_idx))
+        return message, masks[0].any(-1)
+
+    def forward(self, h, p, var_idx, masks, valid, timestamp=None, node_type=None,
+                receiver_chunk_size=None):
+        if receiver_chunk_size is None:
+            message, receiver = self._aggregate(h, p, var_idx, masks)
+        else:
+            messages, receivers = [], []
+            for start in range(0, h.shape[1], receiver_chunk_size):
+                end = min(start + receiver_chunk_size, h.shape[1])
+                def aggregate(h, p, start=start, end=end):
+                    block = slice(start, end)
+                    block_masks = relation_masks(timestamp, var_idx, node_type, valid, block)
+                    selected = block_masks[2:] if self.cross else block_masks[:2]
+                    return self._aggregate(h, p, var_idx, selected, block)
+                # Recompute block intermediates in backward; do not retain L x L activations.
+                if self.training and torch.is_grad_enabled():
+                    msg, recv = checkpoint(aggregate, h, p, use_reentrant=False)
+                else:
+                    msg, recv = aggregate(h, p)
+                messages.append(msg)
+                receivers.append(recv)
+            message, receiver = torch.cat(messages, 1), torch.cat(receivers, 1)
         updated = F.relu(message + self.self_linear(h))
         out = self.norm(self.lambda_ * self.dropout(updated) + (1 - self.lambda_) * h)
         # Cross stage updates only receivers with an endogenous role. X is fixed.
         if self.cross:
-            receiver = masks[0].any(-1)
             # Empty-neighborhood receivers still retain their prior representation.
             out = torch.where(receiver.unsqueeze(-1), out, h)
         return torch.where(valid.unsqueeze(-1), out, torch.zeros_like(out))
@@ -87,7 +110,7 @@ class ExEn(nn.Module):
                  time_embedding_type='rbf', global_args=None, num_vars=None,
                  n_cross_layer=1, exogenous_var_indices=None,
                  gcn_type='gcn', gcn_depth=1, use_efficient_gcn=False,
-                 use_info_agg=False, use_revin=False, **kwargs):
+                 use_info_agg=False, use_revin=False, receiver_chunk_size=None, **kwargs):
         super().__init__()
         if c_in != 1 or c_out != 1:
             raise ValueError('ExEn expects scalar observation nodes (c_in=c_out=1)')
@@ -100,6 +123,9 @@ class ExEn(nn.Module):
         if n_layer < 1 or n_cross_layer < 1:
             raise ValueError('Both stage depths must be positive')
         global_args = global_args or {}
+        if receiver_chunk_size is not None and (not isinstance(receiver_chunk_size, int) or receiver_chunk_size < 1):
+            raise ValueError('receiver_chunk_size must be a positive integer or null')
+        self.receiver_chunk_size = receiver_chunk_size
         self.num_vars = num_vars or global_args.get('num_of_vals')
         if not self.num_vars:
             raise ValueError('Supply num_vars or global_args[num_of_vals]')
@@ -170,11 +196,13 @@ class ExEn(nn.Module):
         status = torch.where(types == FUTURE_EXO, 1, torch.where(query, 2, 0))
         h0 = h0 + self.role_embedding((~exo).long()) + self.status_embedding(status)
         h0 = torch.where(valid.unsqueeze(-1), h0, 0)
-        masks = relation_masks(tt, var_idx, types, valid)
+        masks = relation_masks(tt, var_idx, types, valid) if self.receiver_chunk_size is None else None
         h = h0
         for layer in self.temporal_layers:
-            h = layer(h, p, var_idx, masks[:2], valid)
+            h = layer(h, p, var_idx, masks[:2] if masks is not None else None, valid,
+                      tt, types, self.receiver_chunk_size)
         for layer in self.cross_layers:
-            h = layer(h, p, var_idx, masks[2:], valid)
+            h = layer(h, p, var_idx, masks[2:] if masks is not None else None, valid,
+                      tt, types, self.receiver_chunk_size)
         result = self.projection(self.lambda_ * h + (1 - self.lambda_) * h0)
         return torch.where(valid.unsqueeze(-1), result, 0)

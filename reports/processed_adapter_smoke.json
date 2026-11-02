@@ -1,0 +1,369 @@
+{
+  "scope": "CPU, all full configured windows used for splitting/scaling; one training window per dataset for forward/backward; hid_dim=8, temporal layers=1, chunk=64. Not accuracy evaluation.",
+  "results": [
+    {
+      "dataset": "BE",
+      "splits": {
+        "train": {
+          "windows": 163,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 112665600.0
+        },
+        "valid": {
+          "windows": 54,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 149990400.0
+        },
+        "test": {
+          "windows": 55,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 188006400.0
+        }
+      },
+      "nodes": 363,
+      "queries": 19,
+      "finite_forward_backward": true,
+      "seconds": 0.65,
+      "zero_as_missing": true
+    },
+    {
+      "dataset": "Colbun",
+      "splits": {
+        "train": {
+          "windows": 25,
+          "candidate_windows": 25,
+          "first_start": 0.0,
+          "last_end": 151200000.0
+        },
+        "valid": {
+          "windows": 8,
+          "candidate_windows": 8,
+          "first_start": 151200000.0,
+          "last_end": 199584000.0
+        },
+        "test": {
+          "windows": 9,
+          "candidate_windows": 9,
+          "first_start": 199584000.0,
+          "last_end": 254016000.0
+        }
+      },
+      "nodes": 90,
+      "queries": 4,
+      "finite_forward_backward": true,
+      "seconds": 0.01,
+      "zero_as_missing": true
+    },
+    {
+      "dataset": "DE",
+      "splits": {
+        "train": {
+          "windows": 163,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 112665600.0
+        },
+        "valid": {
+          "windows": 54,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 149990400.0
+        },
+        "test": {
+          "windows": 55,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 188006400.0
+        }
+      },
+      "nodes": 363,
+      "queries": 19,
+      "finite_forward_backward": true,
+      "seconds": 0.02,
+      "zero_as_missing": true
+    },
+    {
+      "dataset": "DIST",
+      "splits": {
+        "train": {
+          "windows": 377,
+          "candidate_windows": 508,
+          "first_start": 5.0,
+          "last_end": 4572005.0
+        },
+        "valid": {
+          "windows": 169,
+          "candidate_windows": 169,
+          "first_start": 4572005.0,
+          "last_end": 6093005.0
+        },
+        "test": {
+          "windows": 170,
+          "candidate_windows": 170,
+          "first_start": 6093005.0,
+          "last_end": 7623005.0
+        }
+      },
+      "nodes": 18910,
+      "queries": 2914,
+      "finite_forward_backward": true,
+      "seconds": 20.55,
+      "zero_as_missing": true
+    },
+    {
+      "dataset": "Energy",
+      "splits": {
+        "train": {
+          "windows": 40,
+          "candidate_windows": 40,
+          "first_start": 0.0,
+          "last_end": 27648000.0
+        },
+        "valid": {
+          "windows": 14,
+          "candidate_windows": 14,
+          "first_start": 27648000.0,
+          "last_end": 37324800.0
+        },
+        "test": {
+          "windows": 14,
+          "candidate_windows": 14,
+          "first_start": 37324800.0,
+          "last_end": 47001600.0
+        }
+      },
+      "nodes": 723,
+      "queries": 17,
+      "finite_forward_backward": true,
+      "seconds": 0.05,
+      "zero_as_missing": true
+    },
+    {
+      "dataset": "FR",
+      "splits": {
+        "train": {
+          "windows": 163,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 112665600.0
+        },
+        "valid": {
+          "windows": 54,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 149990400.0
+        },
+        "test": {
+          "windows": 55,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 188006400.0
+        }
+      },
+      "nodes": 363,
+      "queries": 19,
+      "finite_forward_backward": true,
+      "seconds": 0.02,
+      "zero_as_missing": true
+    },
+    {
+      "dataset": "NP",
+      "splits": {
+        "train": {
+          "windows": 163,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 112665600.0
+        },
+        "valid": {
+          "windows": 54,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 149990400.0
+        },
+        "test": {
+          "windows": 55,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 188006400.0
+        }
+      },
+      "nodes": 363,
+      "queries": 19,
+      "finite_forward_backward": true,
+      "seconds": 0.02,
+      "zero_as_missing": true
+    },
+    {
+      "dataset": "PJM",
+      "splits": {
+        "train": {
+          "windows": 163,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 112665600.0
+        },
+        "valid": {
+          "windows": 54,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 149990400.0
+        },
+        "test": {
+          "windows": 55,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 188006400.0
+        }
+      },
+      "nodes": 363,
+      "queries": 19,
+      "finite_forward_backward": true,
+      "seconds": 0.02,
+      "zero_as_missing": true
+    },
+    {
+      "dataset": "Rapel",
+      "splits": {
+        "train": {
+          "windows": 28,
+          "candidate_windows": 28,
+          "first_start": 0.0,
+          "last_end": 169344000.0
+        },
+        "valid": {
+          "windows": 10,
+          "candidate_windows": 10,
+          "first_start": 169344000.0,
+          "last_end": 229824000.0
+        },
+        "test": {
+          "windows": 10,
+          "candidate_windows": 10,
+          "first_start": 229824000.0,
+          "last_end": 290304000.0
+        }
+      },
+      "nodes": 68,
+      "queries": 7,
+      "finite_forward_backward": true,
+      "seconds": 0.0,
+      "zero_as_missing": true
+    },
+    {
+      "dataset": "Sdwpfh1",
+      "splits": {
+        "train": {
+          "windows": 44,
+          "candidate_windows": 45,
+          "first_start": 0.0,
+          "last_end": 31104000.0
+        },
+        "valid": {
+          "windows": 15,
+          "candidate_windows": 15,
+          "first_start": 31104000.0,
+          "last_end": 41472000.0
+        },
+        "test": {
+          "windows": 16,
+          "candidate_windows": 16,
+          "first_start": 41472000.0,
+          "last_end": 52531200.0
+        }
+      },
+      "nodes": 743,
+      "queries": 13,
+      "finite_forward_backward": true,
+      "seconds": 0.05,
+      "zero_as_missing": true
+    },
+    {
+      "dataset": "Sdwpfh2",
+      "splits": {
+        "train": {
+          "windows": 45,
+          "candidate_windows": 45,
+          "first_start": 0.0,
+          "last_end": 31104000.0
+        },
+        "valid": {
+          "windows": 15,
+          "candidate_windows": 15,
+          "first_start": 31104000.0,
+          "last_end": 41472000.0
+        },
+        "test": {
+          "windows": 16,
+          "candidate_windows": 16,
+          "first_start": 41472000.0,
+          "last_end": 52531200.0
+        }
+      },
+      "nodes": 746,
+      "queries": 15,
+      "finite_forward_backward": true,
+      "seconds": 0.05,
+      "zero_as_missing": true
+    },
+    {
+      "dataset": "Sdwpfm1",
+      "splits": {
+        "train": {
+          "windows": 90,
+          "candidate_windows": 91,
+          "first_start": 0.0,
+          "last_end": 31449600.0
+        },
+        "valid": {
+          "windows": 30,
+          "candidate_windows": 30,
+          "first_start": 31449600.0,
+          "last_end": 41817600.0
+        },
+        "test": {
+          "windows": 31,
+          "candidate_windows": 31,
+          "first_start": 41817600.0,
+          "last_end": 52531200.0
+        }
+      },
+      "nodes": 726,
+      "queries": 19,
+      "finite_forward_backward": true,
+      "seconds": 0.05,
+      "zero_as_missing": true
+    },
+    {
+      "dataset": "Sdwpfm2",
+      "splits": {
+        "train": {
+          "windows": 91,
+          "candidate_windows": 91,
+          "first_start": 0.0,
+          "last_end": 31449600.0
+        },
+        "valid": {
+          "windows": 30,
+          "candidate_windows": 30,
+          "first_start": 31449600.0,
+          "last_end": 41817600.0
+        },
+        "test": {
+          "windows": 31,
+          "candidate_windows": 31,
+          "first_start": 41817600.0,
+          "last_end": 52531200.0
+        }
+      },
+      "nodes": 728,
+      "queries": 19,
+      "finite_forward_backward": true,
+      "seconds": 0.05,
+      "zero_as_missing": true
+    }
+  ]
+}

@@ -75,3 +75,8 @@ python main.py --config_path config/ExEn/ExEn_npz.yaml \
   --model_save_dir_path model_states/exen_demo \
   --result_save_dir_path results/exen_demo
 ```
+
+To use the supplied `processed` folder directly, place it at `data/processed/`
+and use `config/ExEn/processed/BE.yaml` (or another dataset's YAML).
+**All raw zeros are treated as missing** in this adapter, combined with the
+archive mask. See [processed-data and conda guide (中文)](docs/EXEN_PROCESSED_zh.md).

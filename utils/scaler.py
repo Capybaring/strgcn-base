@@ -507,3 +507,46 @@ class DynStaLongStandardScaler:
         for k, v in kv:
             out[int(k)] = float(v)
         return out
+
+
+class ExEnProcessedMinMaxScaler(Scaler):
+    """Fit on valid raw training-window cells; normalize lazily per sample."""
+    @staticmethod
+    def _packet(data):
+        for key in ('train_data', 'valid_data', 'test_data'):
+            if key in data:
+                return data[key]
+        return data
+
+    def fit(self, data):
+        p = self._packet(data)
+        count = len(p['names'])
+        minimum, maximum = np.full(count, np.inf), np.full(count, -np.inf)
+        for a, _, b, _ in p['windows']:
+            x, mask = p['values'][a:b], p['mask'][a:b]
+            minimum = np.minimum(minimum, np.where(mask, x, np.inf).min(0))
+            maximum = np.maximum(maximum, np.where(mask, x, -np.inf).max(0))
+        if not np.isfinite(minimum).all() or not np.isfinite(maximum).all():
+            missing = [p['names'][i] for i in np.where(~np.isfinite(minimum))[0]]
+            raise ValueError(f'Variables with no nonzero training observations: {missing}')
+        self.minimum = minimum
+        self.ranges = np.where(maximum > minimum, maximum - minimum, 1.0)
+
+    def transform(self, data):
+        p = dict(self._packet(data))
+        p.update(scale_min=self.minimum, scale_range=self.ranges)
+        return p
+
+    def save(self, path):
+        np.savez(path, minimum=self.minimum, ranges=self.ranges)
+
+    def load(self, path):
+        with np.load(path, allow_pickle=False) as data:
+            self.minimum = data['minimum']
+            self.ranges = data['ranges']
+
+    def inverse_transform(self, data):
+        raise NotImplementedError('Use inverse_transform_mx with variable indices')
+
+    def inverse_transform_mx(self, data, var_idx=None):
+        return data * self.ranges[var_idx] + self.minimum[var_idx]

@@ -1,0 +1,14 @@
+name: strgcn-exen
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - torch>=2.4
+      - numpy>=1.26
+      - pandas>=2.2
+      - scikit-learn>=1.5
+      - PyYAML>=6.0
+      - tqdm>=4.66
+      - pytest>=8.0

@@ -83,7 +83,8 @@ def main(args):
         sys.modules["data_processors"], data_config["data_processor_name"]
     )
     data_processor = data_processor_class(
-        task_name=global_args["task_name"], global_args=global_args
+        task_name=global_args["task_name"], global_args=global_args,
+        **data_config.get("data_processor_params", {})
     )
     processed_data = data_processor.process()
 
@@ -304,6 +305,9 @@ def main(args):
         # save y_pred, y_true to self.result_save_dir/y_pred.npy, y_true.npy
         np.save(os.path.join(result_save_dir_path, "test_y_pred.npy"), y_pred)
         np.save(os.path.join(result_save_dir_path, "test_y_true.npy"), y_true)
+        if model_config["model_name"] == "ExEn":
+            np.save(os.path.join(result_save_dir_path, "test_y_mask.npy"), trainer.last_eval_mask)
+            np.save(os.path.join(result_save_dir_path, "test_var_idx.npy"), trainer.last_eval_var_idx)
 
         # save results
         result = {

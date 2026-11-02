@@ -291,6 +291,8 @@ class IrrFCGraphForecastTrainer(AbstractTrainer):
             concat_y_var_idx = np.concatenate(
                 [batch.reshape(-1) for batch in y_var_idx_list], axis=0
             )
+            self.last_eval_mask = concat_y_mask
+            self.last_eval_var_idx = concat_y_var_idx
             eval_results = self._get_eval_result(
                 concat_y_pred, concat_y_true, concat_y_mask, concat_y_var_idx, metrics, reduce="mean"
             )
