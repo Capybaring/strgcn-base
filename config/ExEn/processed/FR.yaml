@@ -41,8 +41,12 @@ train_config:
   batch_size: 4
   load_checkpoint: false
   metrics:
-  - masked_mse_long
-  - masked_mae_long
+  - mse_norm
+  - mae_norm
+  - rmse_norm
+  - mse
+  - mae
+  - rmse
   random_seed: 3407
   device: cpu
   optimizer_name: Adam
@@ -53,12 +57,12 @@ train_config:
   scheduler_params:
     step_size: 10
     gamma: 0.5
-  trainer_name: IrrFCGraphForecastTrainer
+  trainer_name: ExEnDAGForecastTrainer
   trainer_params:
     max_epoch_num: 30
     enable_early_stop: true
     early_stop_patience: 5
-    eval_metric_key: masked_mse_long
+    eval_metric_key: mse_norm
     eval_metric_min_is_best: true
     enable_autocast: false
     do_inverse_scaling: false

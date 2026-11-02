@@ -1,0 +1,79 @@
+{
+  "reference": "decisionintelligence/DAG@0758990",
+  "source": "ts_benchmark/evaluation/metrics/regression_metrics.py",
+  "scope": "Direct execution of all six official raw/standardized MSE/MAE/RMSE functions on complete two-target, two-window arrays. Missing-value extension tested separately.",
+  "results": {
+    "mse_norm": {
+      "ours": [
+        0.12600000000000003,
+        0.182
+      ],
+      "DAG_official": [
+        0.12600000000000003,
+        0.182
+      ],
+      "window_mean": 0.15400000000000003,
+      "matches": true
+    },
+    "mae_norm": {
+      "ours": [
+        0.2906888370749727,
+        0.3801315561749643
+      ],
+      "DAG_official": [
+        0.2906888370749727,
+        0.3801315561749643
+      ],
+      "window_mean": 0.3354101966249685,
+      "matches": true
+    },
+    "rmse_norm": {
+      "ours": [
+        0.354964786985977,
+        0.4266145801540308
+      ],
+      "DAG_official": [
+        0.354964786985977,
+        0.4266145801540308
+      ],
+      "window_mean": 0.3907896835700039,
+      "matches": true
+    },
+    "mse": {
+      "ours": [
+        1327.5,
+        443.5
+      ],
+      "DAG_official": [
+        1327.5,
+        443.5
+      ],
+      "window_mean": 885.5,
+      "matches": true
+    },
+    "mae": {
+      "ours": [
+        23.5,
+        15.5
+      ],
+      "DAG_official": [
+        23.5,
+        15.5
+      ],
+      "window_mean": 19.5,
+      "matches": true
+    },
+    "rmse": {
+      "ours": [
+        36.43487340447336,
+        21.059439688652688
+      ],
+      "DAG_official": [
+        36.43487340447336,
+        21.059439688652688
+      ],
+      "window_mean": 28.747156546563023,
+      "matches": true
+    }
+  }
+}

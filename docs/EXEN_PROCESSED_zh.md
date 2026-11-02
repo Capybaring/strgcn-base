@@ -1,5 +1,7 @@
 # 直接使用 processed 数据
 
+评估已切换为 DAG 的训练集 StandardScaler 空间，主指标是 `mse_norm`。模型输入仍用 MinMax；两者独立。详见 [评估量纲与对比规则](DAG_EVALUATION_zh.md)。
+
 ## 数据放在哪里
 
 将你提供的整个 `processed` 文件夹复制到**仓库根目录的 `data/` 下**，最终目录是：
@@ -124,7 +126,7 @@ Energy 为 `[1,2,3,4,5]`，Sdwpf 为 `[1,2,3,4,5,6]`，Colbun/Rapel 为 `[1,2]`�
 
 结果目录除原有 `result.json`、`test_y_pred.npy` 和 `test_y_true.npy`，还保存
 `test_y_mask.npy` 与 `test_var_idx.npy`。后处理时使用 mask=True 的位置计算目标误差，数组位置逐一对应。
-默认指标为训练集缩放空间的误差；此入口使用的新缩放器也支持 `do_inverse_scaling: true`，开启后评估及保存的预测/真值为原单位。
+默认主指标 `mse_norm/mae_norm/rmse_norm` 在独立训练集 StandardScaler 空间计算，另报告原单位的 `mse/mae/rmse`。预测/真值数组保存原单位；`do_inverse_scaling` 保持 false，由新训练器负责转换，避免重复缩放。结果另含 `metrics.json`、`evaluation_protocol.json` 和窗口 ID。
 
 28 项测试通过，验证内容包括零值/原 mask 合并、数据源不变、时间分区无重叠、原始零与缩放零的区别、训练集缩放统计及保存加载、
 已知未来开关、目标掩码、分块输出/梯度一致性和完整 CLI。

@@ -5,6 +5,8 @@
 
 你提供的 `time/values/mask/names` 格式 processed 数据，请使用 [processed 专用入口与 conda 说明](EXEN_PROCESSED_zh.md)。该入口按最新要求将所有原始 0 视为缺失。下文的预切分长表入口继续保留。
 
+processed 数据的主指标已采用 [DAG StandardScaler 评估空间](DAG_EVALUATION_zh.md)，与下方旧 demo 的 MinMax 指标区分。
+
 ## 1. 快速运行
 
 在仓库根目录执行（Python 3.12）：

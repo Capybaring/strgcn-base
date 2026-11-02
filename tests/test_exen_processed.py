@@ -102,7 +102,7 @@ def test_processed_cli(tmp_path):
     c=yaml.safe_load((root/'config/ExEn/processed/BE.yaml').read_text())
     c['global_config']['exen_data_path']=str(path)
     c['data_config']['data_processor_params'].update(history_len=7,forecast_len=3,target_names=['Y'])
-    c['train_config']['trainer_params'].update(max_epoch_num=1,do_inverse_scaling=True)
+    c['train_config']['trainer_params'].update(max_epoch_num=1,do_inverse_scaling=False)
     p=tmp_path/'config.yaml';p.write_text(yaml.safe_dump(c))
     run=subprocess.run([sys.executable,'main.py','--config_path',str(p),
        '--model_save_dir_path',str(tmp_path/'model'),'--result_save_dir_path',str(tmp_path/'result')],
@@ -112,6 +112,21 @@ def test_processed_cli(tmp_path):
     mask=np.load(tmp_path/'result/test_y_mask.npy')
     ids=np.load(tmp_path/'result/test_var_idx.npy')
     assert mask.sum()>0 and (ids[mask.astype(bool)]==0).all()
+    import json
+    from utils.dag_evaluation import DAGEvaluationScaler
+    evaluation=DAGEvaluationScaler().load(tmp_path/'model/evaluation_scaler.npz')
+    prediction=np.load(tmp_path/'result/test_y_pred.npy')
+    truth=np.load(tmp_path/'result/test_y_true.npy')
+    windows=np.load(tmp_path/'result/test_window_id.npy')
+    report=json.loads((tmp_path/'result/metrics.json').read_text())
+    window_mse=[]
+    for wid in np.unique(windows):
+        valid=(windows==wid)&mask.astype(bool)
+        window_mse.append(np.mean(((truth[valid]-prediction[valid])/evaluation.scale_[ids[valid]])**2))
+    np.testing.assert_allclose(report['test']['mse_norm'],np.mean(window_mse))
+    assert 'mse_norm' in report['best_validation']
+    assert report['protocol']['prediction_space']=='original_units'
+
 
 
 def test_zero_future_targets_are_not_supervised(tmp_path):

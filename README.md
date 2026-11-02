@@ -80,3 +80,7 @@ To use the supplied `processed` folder directly, place it at `data/processed/`
 and use `config/ExEn/processed/BE.yaml` (or another dataset's YAML).
 **All raw zeros are treated as missing** in this adapter, combined with the
 archive mask. See [processed-data and conda guide (中文)](docs/EXEN_PROCESSED_zh.md).
+
+Processed-data runs now select checkpoints by DAG `mse_norm` in an independent
+train-only StandardScaler space, and report raw-unit metrics separately. See
+[metric spaces and DAG parity (中文)](docs/DAG_EVALUATION_zh.md).

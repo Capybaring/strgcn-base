@@ -87,6 +87,13 @@ def main(args):
         **data_config.get("data_processor_params", {})
     )
     processed_data = data_processor.process()
+    evaluation_scaler = None
+    if train_config['trainer_name'] == 'ExEnDAGForecastTrainer':
+        from utils.dag_evaluation import DAGEvaluationScaler
+        # Fit independently on RAW training observations before model-input scaling.
+        evaluation_scaler = DAGEvaluationScaler().fit(processed_data['train_data'])
+        evaluation_scaler.save(os.path.join(model_save_dir_path, 'evaluation_scaler.npz'))
+
 
     train_data, valid_data, test_data = (
         {
@@ -194,6 +201,9 @@ def main(args):
             **data_config["dataloader_params"],
         )
 
+    eval_dataloader_params = dict(data_config['dataloader_params'])
+    if evaluation_scaler is not None:
+        eval_dataloader_params['shuffle'] = False
     valid_dataloader = DataLoader(
         valid_dataset,
         batch_size=batch_size,
@@ -201,7 +211,7 @@ def main(args):
         collate_fn=valid_dataset.collate_fn
         if hasattr(valid_dataset, "collate_fn")
         else None,
-        **data_config["dataloader_params"],
+        **eval_dataloader_params,
     )
     test_dataloader = DataLoader(
         test_dataset,
@@ -210,7 +220,7 @@ def main(args):
         collate_fn=test_dataset.collate_fn
         if hasattr(test_dataset, "collate_fn")
         else None,
-        **data_config["dataloader_params"],
+        **eval_dataloader_params,
     )
 
     # ------------------------- Model ---------------------------
@@ -271,6 +281,7 @@ def main(args):
         enable_distributed=args.distributed,
         global_args=global_args,
         **train_config["trainer_params"],
+        **({"evaluation_scaler": evaluation_scaler} if evaluation_scaler is not None else {}),
     )
 
     # load checkpoint
@@ -308,6 +319,29 @@ def main(args):
         if model_config["model_name"] == "ExEn":
             np.save(os.path.join(result_save_dir_path, "test_y_mask.npy"), trainer.last_eval_mask)
             np.save(os.path.join(result_save_dir_path, "test_var_idx.npy"), trainer.last_eval_var_idx)
+        if evaluation_scaler is not None:
+            np.save(os.path.join(result_save_dir_path, "test_window_id.npy"), trainer.last_eval_window_id)
+            np.save(os.path.join(result_save_dir_path, "test_window_start_seconds.npy"),
+                    np.asarray([w[3] for w in test_dataset.packet['windows']]))
+            protocol = dict(reference='decisionintelligence/DAG@0758990',
+                primary_metric='mse_norm', primary_space='train_standardized',
+                aggregation='mean_of_forecast_window_metrics', prediction_space='original_units',
+                evaluation_scaler=evaluation_scaler.manifest(),
+                model_input_scaler=data_config['scaler_name'],
+                evaluation_scaler_file='evaluation_scaler.npz (model directory)',
+                metric_spaces={name: ('train_standardized' if name.endswith('_norm') else 'original_units')
+                               for name in train_config['metrics']},
+                split=global_args.get('exen_processed_summary'),
+                known_future_exogenous_var_ids=data_config['dataset_params'].get('known_future_exogenous_var_ids', []),
+                missingness='original_mask & finite(raw_value) & (raw_value != 0)',
+                irregular_extension='mean over valid target cells within each window; equal weight per window')
+            with open(os.path.join(result_save_dir_path, 'evaluation_protocol.json'), 'w') as f:
+                json.dump(protocol, f, indent=2, ensure_ascii=False, allow_nan=False)
+            standard_results = dict(best_validation=best_eval_result, test=test_result,
+                training_history=trainer.evaluation_history[:-1], protocol=protocol)
+            with open(os.path.join(result_save_dir_path, 'metrics.json'), 'w') as f:
+                json.dump(standard_results, f, indent=2, ensure_ascii=False, allow_nan=False)
+
 
         # save results
         result = {
