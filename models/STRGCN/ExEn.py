@@ -9,6 +9,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
+from .SparseRelations import build_sparse_relations, sparse_messages
 from .TimeEmbedding import TimeEmbedding
 from .STRGCN_Layer import low_rank_graph_conv, masked_softmax
 
@@ -70,8 +71,10 @@ class DirectedRelationLayer(nn.Module):
         return message, masks[0].any(-1)
 
     def forward(self, h, p, var_idx, masks, valid, timestamp=None, node_type=None,
-                receiver_chunk_size=None):
-        if receiver_chunk_size is None:
+                receiver_chunk_size=None, sparse_plan=None):
+        if sparse_plan is not None:
+            message, receiver = sparse_messages(self, h, p, var_idx, sparse_plan, receiver_chunk_size or 128)
+        elif receiver_chunk_size is None:
             message, receiver = self._aggregate(h, p, var_idx, masks)
         else:
             messages, receivers = [], []
@@ -110,7 +113,7 @@ class ExEn(nn.Module):
                  time_embedding_type='rbf', global_args=None, num_vars=None,
                  n_cross_layer=1, exogenous_var_indices=None,
                  gcn_type='gcn', gcn_depth=1, use_efficient_gcn=False,
-                 use_info_agg=False, use_revin=False, receiver_chunk_size=None, **kwargs):
+                 use_info_agg=False, use_revin=False, receiver_chunk_size=None, relation_backend="dense", **kwargs):
         super().__init__()
         if c_in != 1 or c_out != 1:
             raise ValueError('ExEn expects scalar observation nodes (c_in=c_out=1)')
@@ -125,6 +128,9 @@ class ExEn(nn.Module):
         global_args = global_args or {}
         if receiver_chunk_size is not None and (not isinstance(receiver_chunk_size, int) or receiver_chunk_size < 1):
             raise ValueError('receiver_chunk_size must be a positive integer or null')
+        if relation_backend not in ("dense", "sparse_csr"):
+            raise ValueError("relation_backend must be dense or sparse_csr")
+        self.relation_backend = relation_backend
         self.receiver_chunk_size = receiver_chunk_size
         self.num_vars = num_vars or global_args.get('num_of_vals')
         if not self.num_vars:
@@ -196,13 +202,14 @@ class ExEn(nn.Module):
         status = torch.where(types == FUTURE_EXO, 1, torch.where(query, 2, 0))
         h0 = h0 + self.role_embedding((~exo).long()) + self.status_embedding(status)
         h0 = torch.where(valid.unsqueeze(-1), h0, 0)
-        masks = relation_masks(tt, var_idx, types, valid) if self.receiver_chunk_size is None else None
+        sparse_plan = build_sparse_relations(tt, var_idx, types, valid) if self.relation_backend == "sparse_csr" else None
+        masks = relation_masks(tt, var_idx, types, valid) if sparse_plan is None and self.receiver_chunk_size is None else None
         h = h0
         for layer in self.temporal_layers:
             h = layer(h, p, var_idx, masks[:2] if masks is not None else None, valid,
-                      tt, types, self.receiver_chunk_size)
+                      tt, types, self.receiver_chunk_size, sparse_plan=sparse_plan)
         for layer in self.cross_layers:
             h = layer(h, p, var_idx, masks[2:] if masks is not None else None, valid,
-                      tt, types, self.receiver_chunk_size)
+                      tt, types, self.receiver_chunk_size, sparse_plan=sparse_plan)
         result = self.projection(self.lambda_ * h + (1 - self.lambda_) * h0)
         return torch.where(valid.unsqueeze(-1), result, 0)

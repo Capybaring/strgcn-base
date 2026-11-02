@@ -45,6 +45,7 @@ model_config:
     gcn_type: gcn
     gcn_depth: 1
     receiver_chunk_size: 128
+    relation_backend: sparse_csr
 train_config:
   batch_size: 1
   load_checkpoint: false

@@ -96,11 +96,13 @@ def test_chunked_values_and_gradients_match_dense(chunk_size):
     with torch.no_grad():torch.testing.assert_close(dense(**b),chunked(**b))
 
 
-def test_processed_cli(tmp_path):
+@pytest.mark.parametrize("backend", ["dense", "sparse_csr"])
+def test_processed_cli(tmp_path, backend):
     path, _, _ = archive(tmp_path)
     root=Path(__file__).resolve().parents[1]
     c=yaml.safe_load((root/'config/ExEn/processed/BE.yaml').read_text())
     c['global_config']['exen_data_path']=str(path)
+    c['model_config']['model_params']['relation_backend']=backend
     c['data_config']['data_processor_params'].update(history_len=7,forecast_len=3,target_names=['Y'])
     c['train_config']['trainer_params'].update(max_epoch_num=1,do_inverse_scaling=False)
     p=tmp_path/'config.yaml';p.write_text(yaml.safe_dump(c))

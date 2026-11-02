@@ -84,3 +84,6 @@ archive mask. See [processed-data and conda guide (中文)](docs/EXEN_PROCESSED_
 Processed-data runs now select checkpoints by DAG `mse_norm` in an independent
 train-only StandardScaler space, and report raw-unit metrics separately. See
 [metric spaces and DAG parity (中文)](docs/DAG_EVALUATION_zh.md).
+
+DIST now defaults to streamed CSR legal-edge relations. See
+[sparse backend, execution and benchmarks (中文)](docs/SPARSE_RELATIONS_zh.md).

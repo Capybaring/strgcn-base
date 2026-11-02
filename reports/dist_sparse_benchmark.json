@@ -1,0 +1,35 @@
+{
+  "scope": "Separate sequential CPU processes, one first actual DIST training window; timing excludes loading/normalization fitting; no parameter updates; not full-epoch throughput or CUDA validation.",
+  "torch_version": "2.15.0",
+  "dense": {
+    "backend": "dense",
+    "threads": 1,
+    "device": "cpu",
+    "nodes": 18910,
+    "hidden_dim": 16,
+    "temporal_layers": 2,
+    "cross_layers": 1,
+    "receiver_chunk_size": 128,
+    "forward_backward_seconds": 62.445298124919645,
+    "peak_process_rss_bytes": 1154138112,
+    "finite": true
+  },
+  "sparse": {
+    "backend": "sparse_csr",
+    "threads": 1,
+    "device": "cpu",
+    "nodes": 18910,
+    "hidden_dim": 16,
+    "temporal_layers": 2,
+    "cross_layers": 1,
+    "receiver_chunk_size": 128,
+    "forward_backward_seconds": 27.62063191703055,
+    "peak_process_rss_bytes": 1050836992,
+    "finite": true
+  },
+  "speedup": 2.260820762989735,
+  "prediction_max_abs_difference": 4.76837158203125e-07,
+  "parameter_gradient_max_abs_difference": 5.438923835754395e-07,
+  "forward_backward_parity_passed": true,
+  "limitations": "Single trial per backend; process RSS includes input data, runtime and allocator caches and varies between runs."
+}

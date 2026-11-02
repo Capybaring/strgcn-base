@@ -120,6 +120,8 @@ Energy 为 `[1,2,3,4,5]`，Sdwpf 为 `[1,2,3,4,5,6]`，Colbun/Rapel 为 `[1,2]`�
 
 ## 内存、输出和测试
 
+DIST 已默认启用 [CSR 稀疏关系 backend](SPARSE_RELATIONS_zh.md)，只计算合法边。其他配置继续使用原 dense 分块模式。
+
 `receiver_chunk_size: 128` 按接收节点分块构建掩码、关系和聚合，训练时重算块内中间结果以降低内存。
 没有新增超节点或改变候选边；测试核对了与整图计算的输出和参数梯度一致。
 计算总量仍为平方级；DIST 默认 batch_size=1，完整训练可能明显慢于原 Sandwich。
