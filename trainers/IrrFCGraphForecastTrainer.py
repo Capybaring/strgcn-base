@@ -86,8 +86,10 @@ class IrrFCGraphForecastTrainer(AbstractTrainer):
 
     def loss_func(self, y_pred, y_true, *args, **kwargs):
         mask = kwargs.get("mask", None)
-        loss = ((y_pred - y_true) ** 2) * mask
-        return loss.sum() / mask.sum()
+        selected = mask.bool()
+        if not selected.any():
+            raise ValueError('Batch has no supervised queries')
+        return ((y_pred[selected] - y_true[selected]) ** 2).mean()
 
     def train_one_epoch(self, data_loader):
         self.model.train()
@@ -101,8 +103,8 @@ class IrrFCGraphForecastTrainer(AbstractTrainer):
             for key, val in batch_dict.items():
                 if isinstance(val, torch.Tensor):
                     batch_dict[key] = val.to(self.device, non_blocking=True)
-            batch_X_values = batch_dict["batch_value"] * (
-                ~(batch_dict["batch_pred_mask"].bool())
+            batch_X_values = torch.where(
+                batch_dict["batch_pred_mask"].bool(), 0, batch_dict["batch_value"]
             )
             with autocast(enabled=self.enable_autocast):
                 prediction = self.model(
@@ -113,6 +115,8 @@ class IrrFCGraphForecastTrainer(AbstractTrainer):
                     batch_pad_mask=batch_dict.get("batch_pad_mask", None),
                     batch_time_id=batch_dict.get("batch_time_id", None),
                     batch_agg_mask=batch_dict.get("batch_agg_mask", None),
+                    **({"batch_node_type": batch_dict["batch_node_type"]}
+                       if "batch_node_type" in batch_dict else {}),
                 ).squeeze(-1)
                 loss = self.loss_func(
                     prediction,
@@ -208,8 +212,8 @@ class IrrFCGraphForecastTrainer(AbstractTrainer):
             # move_batch_data_to_device
             for key in batch_dict:
                 batch_dict[key] = batch_dict[key].to(self.device)
-            batch_X_values = batch_dict["batch_value"] * (
-                ~(batch_dict["batch_pred_mask"].bool())
+            batch_X_values = torch.where(
+                batch_dict["batch_pred_mask"].bool(), 0, batch_dict["batch_value"]
             )
             with autocast(enabled=self.enable_autocast):
                 prediction = (
@@ -221,6 +225,8 @@ class IrrFCGraphForecastTrainer(AbstractTrainer):
                         batch_pad_mask=batch_dict.get("batch_pad_mask", None),
                         batch_time_id=batch_dict.get("batch_time_id", None),
                         batch_agg_mask=batch_dict.get("batch_agg_mask", None),
+                        **({"batch_node_type": batch_dict["batch_node_type"]}
+                           if "batch_node_type" in batch_dict else {}),
                     )
                     .squeeze(-1)
                     .detach()
@@ -234,7 +240,7 @@ class IrrFCGraphForecastTrainer(AbstractTrainer):
             data_num += 1
             y_true.append(batch_dict["batch_value"])
             y_pred.append(prediction)
-            y_mask.append(batch_dict["batch_pred_mask"])
+            y_mask.append(batch_dict["batch_pred_mask"] * batch_dict["batch_pad_mask"])
             y_var_idx.append(batch_dict["batch_var_idx"])
 
             if self.rank == 0:

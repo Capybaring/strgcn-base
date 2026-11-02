@@ -8,7 +8,6 @@ from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
 from utils.parse_duration_to_seconds import parse_duration_to_seconds
 
-from models import GaussianBasedGraphAggregationMaskGenerator
 
 class ITSPredictionDataset(Dataset):
     """
@@ -202,6 +201,7 @@ class ITSPredictionDataset(Dataset):
 
         self._aggregator = None
         if self.enable_agg_mask:
+            from models import GaussianBasedGraphAggregationMaskGenerator
             # Create aggregator: for train, pretrain if needed; for eval/test, only load from train cache
             if self.type == "train":
                 self._aggregator = GaussianBasedGraphAggregationMaskGenerator(

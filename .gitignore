@@ -16,3 +16,7 @@ data/
 base_models/
 cache/
 /models/todo/
+
+# Local ExEn development environments and test artifacts
+.venv/
+.pytest_cache/

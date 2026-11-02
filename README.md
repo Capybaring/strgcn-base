@@ -58,3 +58,20 @@ bash scripts/STRGCN_cls_MIMIC3.sh
 bash scripts/STRGCN_cls_P12.sh
 bash scripts/STRGCN_cls_P19.sh
 ```
+
+## Ex-En baseline (single observation graph)
+
+The new `ExEn` model retains STRGCN's value/time encoders, source low-rank
+convolution, learned time/variable relations and linear prediction head, with
+explicit node roles and three directed relation masks. It does not use Sandwich
+or hypernodes. See [implementation and run guide (中文)](docs/EXEN_BASELINE_zh.md)
+for data roles, target-leakage tests, inference and configuration details.
+
+```bash
+pip install -r requirements-exen.txt
+python -m pytest -q tests/test_exen.py
+python examples/make_exen_demo.py
+python main.py --config_path config/ExEn/ExEn_npz.yaml \
+  --model_save_dir_path model_states/exen_demo \
+  --result_save_dir_path results/exen_demo
+```

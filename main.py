@@ -122,7 +122,8 @@ def main(args):
             seen_data = processed_data["seen_data"]
         else:
             seen_data = train_data
-        scaler.fit(seen_data)
+        # ExEn statistics are fitted on the training split only.
+        scaler.fit(train_data if model_config['model_name'] == 'ExEn' else seen_data)
         # save scaler
         scaler.save(os.path.join(model_save_dir_path, "scaler"))
 

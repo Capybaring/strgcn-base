@@ -1,0 +1,62 @@
+global_config:
+  task_name: prediction
+  exen_data_path: ./data/exen_demo.npz
+
+data_config:
+  data_processor_name: ExEnNPZProcessor
+  scaler_name: LongMinMaxScaler
+  scaler_params: {min: null, max: null}
+  dataset_name: ExEnPredictionDataset
+  dataset_params:
+    history_len: 2
+    forecast_len: 1
+    time_end: 3
+    use_time_chunk: false
+    normize_time_method: relative
+    output_style: long
+    use_cache: false
+    enable_agg_mask: false
+    # Raw IDs in the NPZ, NOT remapped embedding indices.
+    exogenous_var_ids: [10, 30]
+    # Only list variables whose future values are known at forecast issuance.
+    known_future_exogenous_var_ids: [10]
+  dataloader_params:
+    shuffle: true
+    num_workers: 0
+    pin_memory: false
+    drop_last: false
+
+model_config:
+  model_name: ExEn
+  model_params:
+    c_in: 1
+    c_out: 1
+    hid_dim: 16
+    node_dim: 16
+    n_layer: 2
+    n_cross_layer: 1
+    dropout: 0.0
+    use_norm: true
+    time_embedding_type: rbf
+    gcn_type: gcn
+    gcn_depth: 1
+
+train_config:
+  batch_size: 8
+  load_checkpoint: false
+  metrics: [masked_mse_long, masked_mae_long]
+  random_seed: 3407
+  device: cpu
+  optimizer_name: Adam
+  optimizer_params: {lr: 0.003, weight_decay: 0.0}
+  scheduler_name: StepLR
+  scheduler_params: {step_size: 10, gamma: 0.5}
+  trainer_name: IrrFCGraphForecastTrainer
+  trainer_params:
+    max_epoch_num: 10
+    enable_early_stop: true
+    early_stop_patience: 5
+    eval_metric_key: masked_mse_long
+    eval_metric_min_is_best: true
+    enable_autocast: false
+    do_inverse_scaling: false
