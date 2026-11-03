@@ -121,3 +121,13 @@ DEVICE=cuda:0 bash scripts/run_strgcn_direct.sh
 # Include DIST after checking its history/forecast lengths:
 INCLUDE_DIST=1 DEVICE=cuda:0 bash scripts/run_strgcn_direct.sh
 ```
+
+For the matched input ablation with the **same STRGCNDirect backbone**, remove
+both historical and future exogenous inputs (12 non-DIST datasets):
+
+```bash
+DEVICE=cuda:0 bash scripts/run_strgcn_direct_no_exogenous.sh
+```
+
+Results go to `results/strgcn_direct_no_exogenous/`; compare with
+`results/strgcn_direct_known_future/` in the same DAG standardized metric space.

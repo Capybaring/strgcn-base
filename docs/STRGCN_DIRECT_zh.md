@@ -112,7 +112,39 @@ python -u main.py --config_path config/STRGCNDirect/processed/BE.yaml \
 ```
 
 单独运行其他数据集时替换上述三个路径中的 `BE`。不要复用 ExEn 的 checkpoint；新模型结构不同。
-如果额外做完全无外生输入的对照，单次命令可加 `--no-exogenous` 并更换输出目录。
+
+### 同一个联合模型的无外生对照
+
+保留 `STRGCNDirect` 的 3 层、每层 $T_0,T_1$、时间与变量联合打分、权重参数形状和
+变量 ID 映射，仅移除所有历史与未来外生观测节点。保留历史目标变量及未来目标查询。
+训练/验证/测试窗口、目标真值、目标 mask、训练划分拟合的缩放统计和 DAG 评估空间均保持一致。
+这是输入消融，不改回旧 ExEn 算子或分阶段传播。
+
+```bash
+# 默认 12 个数据集，排除 DIST
+DEVICE=cuda:0 bash scripts/run_strgcn_direct_no_exogenous.sh
+# 等价的通用入口
+NO_EXOGENOUS=1 DEVICE=cuda:0 bash scripts/run_strgcn_direct.sh
+# CPU
+DEVICE=cpu bash scripts/run_strgcn_direct_no_exogenous.sh
+```
+
+新输出分别位于 `results/strgcn_direct_no_exogenous/<数据集>/` 和
+`model_states/strgcn_direct_no_exogenous/<数据集>/`。
+与 `strgcn_direct_known_future` 对照，`metrics.json` 的 protocol 应记录
+`model_name: STRGCNDirect`、`use_exogenous: false`、`forecast_inputs: Y_history_only`、
+`known_future_exogenous_var_ids: []`。
+单独运行 BE：
+
+```bash
+python -u main.py --config_path config/STRGCNDirect/processed/BE.yaml \
+  --no-exogenous --device cuda:0 \
+  --model_save_dir_path model_states/strgcn_direct_no_exogenous/BE \
+  --result_save_dir_path results/strgcn_direct_no_exogenous/BE
+```
+
+`INCLUDE_DIST=1` 和自定义 `RUN_TAG` 在无外生入口同样有效；DIST 时间窗口仍需按前文核对。
+训练应从头开始，不复用已有有外生实验的 checkpoint。
 
 ## 验证
 
@@ -125,7 +157,12 @@ python -m pytest -q tests
 padding、节点乱序、完整训练 CLI 和 DAG 评估空间。
 本地验证使用 CPU；不以短窗口冒烟结果作为完整训练效果结论。
 
-本次验证：89 项测试通过，12 个非 DIST 实际数据集首训练窗口均通过前向/反向、
+联合版首轮验证：89 项测试通过，12 个非 DIST 实际数据集首训练窗口均通过前向/反向、
 未来输入非零梯度与查询输入零梯度检查；BE 另完成每个划分最多 4 个窗口、1 epoch 的训练、
 checkpoint 载入与测试评估。记录见 `reports/strgcn_direct_smoke.json`。
 CUDA 路径尚未在本地实测。
+
+加入无外生批量入口后，93 项测试通过。12 个实际数据集分别核对每个划分首窗口：
+无外生样本严格等于有外生样本保留目标变量后的子集，所有窗口列表和变量 ID 映射保持一致；
+首训练窗口均通过 3 层 Chebyshev 模型的 CPU 前向/反向与查询输入零梯度检查。
+记录见 `reports/strgcn_direct_no_exogenous_smoke.json`，不代表完整训练精度结果。

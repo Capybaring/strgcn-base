@@ -159,6 +159,8 @@ def test_full_training_cli_dag_space_and_known_future(tmp_path,no_exogenous):
     report = json.loads((tmp_path/'result/metrics.json').read_text())
     assert report['protocol']['model_name']=='STRGCNDirect'
     assert report['protocol']['relation_scope']=='all_known_variables_to_all_receivers_causal'
+    assert report['protocol']['use_exogenous'] is (not no_exogenous)
+    assert report['protocol']['forecast_inputs']==('Y_history_only' if no_exogenous else 'Y_history_X_history_and_known_future')
     assert report['protocol']['known_future_exogenous_var_ids']==([] if no_exogenous else [1,2])
     mask = np.load(tmp_path/'result/test_y_mask.npy').astype(bool)
     ids = np.load(tmp_path/'result/test_var_idx.npy')
@@ -189,14 +191,20 @@ def test_all_processed_configs_are_role_free_and_match_exen_tasks():
 
 
 @pytest.mark.parametrize('include_dist', ['0','1'])
-def test_batch_command_routes_to_new_configs_and_results(tmp_path,include_dist):
+@pytest.mark.parametrize('mode', ['known_future','no_exogenous','no_exogenous_wrapper'])
+def test_batch_command_routes_to_new_configs_and_results(tmp_path,include_dist,mode):
     import os
     fake = tmp_path/'python'
     fake.write_text(f'#!{sys.executable}\nimport json,os,sys\nwith open(os.environ["COMMAND_LOG"],"a") as f:f.write(json.dumps(sys.argv[1:])+"\\n")\n')
     fake.chmod(0o755)
     log = tmp_path/'commands.jsonl'
-    env = dict(os.environ,PYTHON=str(fake),DEVICE='cuda:0',COMMAND_LOG=str(log),INCLUDE_DIST=include_dist)
-    run = subprocess.run(['bash','scripts/run_strgcn_direct.sh'],cwd=ROOT,env=env,
+    no_exogenous = mode!='known_future'
+    run_tag = 'strgcn_direct_no_exogenous' if no_exogenous else 'strgcn_direct_known_future'
+    env = dict(os.environ,PYTHON=str(fake),DEVICE='cuda:0',COMMAND_LOG=str(log),INCLUDE_DIST=include_dist,
+               NO_EXOGENOUS='1' if mode=='no_exogenous' else '0')
+    env.pop('RUN_TAG',None)
+    script = 'run_strgcn_direct_no_exogenous.sh' if mode=='no_exogenous_wrapper' else 'run_strgcn_direct.sh'
+    run = subprocess.run(['bash',f'scripts/{script}'],cwd=ROOT,env=env,
                          text=True,capture_output=True,timeout=30)
     assert run.returncode==0,run.stderr
     commands = [json.loads(line) for line in log.read_text().splitlines()]
@@ -206,7 +214,8 @@ def test_batch_command_routes_to_new_configs_and_results(tmp_path,include_dist):
         path = command[command.index('--config_path')+1]
         name = Path(path).stem;names.append(name)
         assert path==f'config/STRGCNDirect/processed/{name}.yaml'
-        assert command[-2:]==['--device','cuda:0']
-        assert f'results/strgcn_direct_known_future/{name}' in command
-        assert f'model_states/strgcn_direct_known_future/{name}' in command
+        assert command[command.index('--device')+1]=='cuda:0'
+        assert ('--no-exogenous' in command)==no_exogenous
+        assert f'results/{run_tag}/{name}' in command
+        assert f'model_states/{run_tag}/{name}' in command
     assert ('DIST' in names)==(include_dist=='1')
