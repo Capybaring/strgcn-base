@@ -7,7 +7,7 @@ data_config:
   scaler_params: {}
   dataset_name: ExEnProcessedDataset
   dataset_params:
-    known_future_exogenous_var_ids: []
+    known_future_exogenous_var_ids: all
   dataloader_params:
     shuffle: true
     num_workers: 0

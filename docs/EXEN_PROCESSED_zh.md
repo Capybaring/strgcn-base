@@ -105,18 +105,37 @@ YAML 中时长可以写秒数或 `168h`、`60d` 等带单位字符串。
 
 ## 已知未来外生信息
 
-各配置默认：
+按当前实验设定，所有 processed 数据集默认使用全部已知未来外生观测：
 
 ```yaml
 dataset_params:
-  known_future_exogenous_var_ids: []
+  known_future_exogenous_var_ids: all
 ```
 
-即默认只使用历史外生，不把存档中的事后外生观测自动当作已知未来输入。
-如果 BE/NP/PJM/FR/DE 的两个预测量在你的任务中确实已提前获得，可改成 `[1, 2]`。
-Energy 为 `[1,2,3,4,5]`，Sdwpf 为 `[1,2,3,4,5,6]`，Colbun/Rapel 为 `[1,2]`，DIST 的 OP 为 `[9,10,11,12,13,14,15,16,17]`。
-只填写预测发布时可用的那部分；空列表和任意合法子集均支持。
-未配置的未来外生节点在生成样本时即被移除，减小图规模。
+`all` 按 NPZ 的 names 顺序和 target_names 自动选择全部非目标变量，无需手工维护编号。
+BE/NP/PJM/FR/DE、Colbun/Rapel 为 `[1,2]`；Energy 为 `[1,2,3,4,5]`；
+Sdwpf 为 `[1,2,3,4,5,6]`；DIST 的 OP 为 `[9,10,11,12,13,14,15,16,17]`。
+这些编号会以具体列表写入 evaluation_protocol.json。未提供此参数时，processed 数据集也默认 all。
+显式设置 `[]` 可以复现历史外生对照，显式列表可以只启用部分变量。
+未来外生仍遵守原始 mask、原始 0 缺失规则，以及 sender_time <= receiver_time 的边约束；未来内生值只用于损失。
+
+此前已经保存的结果未使用未来外生，是历史输入对照；本次应重新训练并使用新目录。
+运行全部非 DIST 数据集（12 个）：
+
+```bash
+conda activate strgcn-exen
+bash scripts/run_exen_future_except_dist.sh
+```
+
+有可用 NVIDIA CUDA 环境时，可指定设备，无需逐一改 YAML：
+
+```bash
+DEVICE=cuda:0 bash scripts/run_exen_future_except_dist.sh
+```
+
+不指定 DEVICE 时按 YAML 的设备配置运行，目前默认为 CPU。单个训练入口也支持 `--device cuda:0`。
+脚本顺序运行，出错即停止；输出为 `model_states/exen_known_future/<数据集>/` 和 `results/exen_known_future/<数据集>/`。
+可用 `RUN_TAG=exen_known_future_run2` 为另一次实验指定新目录。脚本明确排除 DIST，但 DIST 配置本身也启用了 all。
 
 ## 内存、输出和测试
 

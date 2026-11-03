@@ -72,7 +72,8 @@ def main(args):
     )  # for cls task
     load_checkpoint = train_config["load_checkpoint"]
     metrics = train_config.get("metrics", ["mae", "rmse", "mape"])
-    device = train_config.get("device", "cuda")
+    device = getattr(args, "device", None) or train_config.get("device", "cuda")
+    train_config["device"] = device
     global_args["device"] = device
 
     # set random seeds for reproducibility
@@ -332,7 +333,7 @@ def main(args):
                 metric_spaces={name: ('train_standardized' if name.endswith('_norm') else 'original_units')
                                for name in train_config['metrics']},
                 split=global_args.get('exen_processed_summary'),
-                known_future_exogenous_var_ids=data_config['dataset_params'].get('known_future_exogenous_var_ids', []),
+                known_future_exogenous_var_ids=sorted(train_dataset.known_future_exogenous_var_ids),
                 missingness='original_mask & finite(raw_value) & (raw_value != 0)',
                 irregular_extension='mean over valid target cells within each window; equal weight per window')
             with open(os.path.join(result_save_dir_path, 'evaluation_protocol.json'), 'w') as f:
@@ -384,6 +385,7 @@ if __name__ == "__main__":
         "--distributed", action="store_true", help="Enable distributed training"
     )
 
+    parser.add_argument("--device", default=None, help="Override configured device, e.g. cpu or cuda:0")
     args = parser.parse_args()
     if args.distributed:
         setup_distributed()

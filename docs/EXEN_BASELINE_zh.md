@@ -3,7 +3,7 @@
 本实现基于原仓库 `31194f9`，新增 `ExEn`，原 STRGCN 模型仍保留。
 模型使用统一观测图、角色/状态编码和三类有向关系，移除 Sandwich 与超节点聚合。
 
-你提供的 `time/values/mask/names` 格式 processed 数据，请使用 [processed 专用入口与 conda 说明](EXEN_PROCESSED_zh.md)。该入口按最新要求将所有原始 0 视为缺失。下文的预切分长表入口继续保留。
+你提供的 `time/values/mask/names` 格式 processed 数据，请使用 [processed 专用入口与 conda 说明](EXEN_PROCESSED_zh.md)。该入口按最新要求将所有原始 0 视为缺失，并默认启用全部未来外生（`all`）；下文旧长表 demo 的参数约定单独保留。下文的预切分长表入口继续保留。
 
 processed 数据的主指标已采用 [DAG StandardScaler 评估空间](DAG_EVALUATION_zh.md)，与下方旧 demo 的 MinMax 指标区分。
 

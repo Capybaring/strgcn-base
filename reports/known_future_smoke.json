@@ -1,0 +1,168 @@
+{
+  "scope": "One actual first training window per non-DIST dataset on CPU; train-only scaling on all training windows, full configured model. Not full-epoch accuracy evaluation.",
+  "results": [
+    {
+      "dataset": "BE",
+      "future_exogenous_ids": [
+        1,
+        2
+      ],
+      "future_exogenous_nodes": 36,
+      "query_nodes": 19,
+      "query_input_gradient_zero": true,
+      "future_exogenous_input_gradient_nonzero": true,
+      "finite_backward": true
+    },
+    {
+      "dataset": "Colbun",
+      "future_exogenous_ids": [
+        1,
+        2
+      ],
+      "future_exogenous_nodes": 5,
+      "query_nodes": 4,
+      "query_input_gradient_zero": true,
+      "future_exogenous_input_gradient_nonzero": true,
+      "finite_backward": true
+    },
+    {
+      "dataset": "DE",
+      "future_exogenous_ids": [
+        1,
+        2
+      ],
+      "future_exogenous_nodes": 36,
+      "query_nodes": 19,
+      "query_input_gradient_zero": true,
+      "future_exogenous_input_gradient_nonzero": true,
+      "finite_backward": true
+    },
+    {
+      "dataset": "Energy",
+      "future_exogenous_ids": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "future_exogenous_nodes": 90,
+      "query_nodes": 17,
+      "query_input_gradient_zero": true,
+      "future_exogenous_input_gradient_nonzero": true,
+      "finite_backward": true
+    },
+    {
+      "dataset": "FR",
+      "future_exogenous_ids": [
+        1,
+        2
+      ],
+      "future_exogenous_nodes": 36,
+      "query_nodes": 19,
+      "query_input_gradient_zero": true,
+      "future_exogenous_input_gradient_nonzero": true,
+      "finite_backward": true
+    },
+    {
+      "dataset": "NP",
+      "future_exogenous_ids": [
+        1,
+        2
+      ],
+      "future_exogenous_nodes": 36,
+      "query_nodes": 19,
+      "query_input_gradient_zero": true,
+      "future_exogenous_input_gradient_nonzero": true,
+      "finite_backward": true
+    },
+    {
+      "dataset": "PJM",
+      "future_exogenous_ids": [
+        1,
+        2
+      ],
+      "future_exogenous_nodes": 36,
+      "query_nodes": 19,
+      "query_input_gradient_zero": true,
+      "future_exogenous_input_gradient_nonzero": true,
+      "finite_backward": true
+    },
+    {
+      "dataset": "Rapel",
+      "future_exogenous_ids": [
+        1,
+        2
+      ],
+      "future_exogenous_nodes": 4,
+      "query_nodes": 7,
+      "query_input_gradient_zero": true,
+      "future_exogenous_input_gradient_nonzero": true,
+      "finite_backward": true
+    },
+    {
+      "dataset": "Sdwpfh1",
+      "future_exogenous_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "future_exogenous_nodes": 87,
+      "query_nodes": 13,
+      "query_input_gradient_zero": true,
+      "future_exogenous_input_gradient_nonzero": true,
+      "finite_backward": true
+    },
+    {
+      "dataset": "Sdwpfh2",
+      "future_exogenous_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "future_exogenous_nodes": 87,
+      "query_nodes": 15,
+      "query_input_gradient_zero": true,
+      "future_exogenous_input_gradient_nonzero": true,
+      "finite_backward": true
+    },
+    {
+      "dataset": "Sdwpfm1",
+      "future_exogenous_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "future_exogenous_nodes": 85,
+      "query_nodes": 19,
+      "query_input_gradient_zero": true,
+      "future_exogenous_input_gradient_nonzero": true,
+      "finite_backward": true
+    },
+    {
+      "dataset": "Sdwpfm2",
+      "future_exogenous_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "future_exogenous_nodes": 85,
+      "query_nodes": 19,
+      "query_input_gradient_zero": true,
+      "future_exogenous_input_gradient_nonzero": true,
+      "finite_backward": true
+    }
+  ]
+}

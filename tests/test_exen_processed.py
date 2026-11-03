@@ -38,7 +38,7 @@ def test_zero_mask_and_chronological_windows(tmp_path):
         assert data[left]['windows'][-1][3] + 10 <= data[right]['windows'][0][3]
     with np.load(path) as raw:
         assert raw['values'][0, 0] == 0 and raw['mask'][0, 0]  # source unmodified
-    ds = ExEnProcessedDataset(data, type='train', global_args=g)
+    ds = ExEnProcessedDataset(data, type='train', global_args=g, known_future_exogenous_var_ids=[])
     first = ds[0]
     assert not (first[:, 1] == 0).any()
     assert not ((first[:, 0] == 0) & (first[:, 2] == 0)).any()
@@ -102,12 +102,13 @@ def test_processed_cli(tmp_path, backend):
     root=Path(__file__).resolve().parents[1]
     c=yaml.safe_load((root/'config/ExEn/processed/BE.yaml').read_text())
     c['global_config']['exen_data_path']=str(path)
+    c['train_config']['device']='cuda:999'  # explicit CLI override must take precedence
     c['model_config']['model_params']['relation_backend']=backend
     c['data_config']['data_processor_params'].update(history_len=7,forecast_len=3,target_names=['Y'])
     c['train_config']['trainer_params'].update(max_epoch_num=1,do_inverse_scaling=False)
     p=tmp_path/'config.yaml';p.write_text(yaml.safe_dump(c))
     run=subprocess.run([sys.executable,'main.py','--config_path',str(p),
-       '--model_save_dir_path',str(tmp_path/'model'),'--result_save_dir_path',str(tmp_path/'result')],
+       '--model_save_dir_path',str(tmp_path/'model'),'--result_save_dir_path',str(tmp_path/'result'),'--device','cpu'],
        cwd=root,text=True,capture_output=True,timeout=60)
     assert run.returncode==0,run.stdout+run.stderr
     assert (tmp_path/'result/result.json').exists()
@@ -128,6 +129,7 @@ def test_processed_cli(tmp_path, backend):
     np.testing.assert_allclose(report['test']['mse_norm'],np.mean(window_mse))
     assert 'mse_norm' in report['best_validation']
     assert report['protocol']['prediction_space']=='original_units'
+    assert report['protocol']['known_future_exogenous_var_ids']==[1,2]
 
 
 
@@ -146,3 +148,47 @@ def test_zero_future_targets_are_not_supervised(tmp_path):
     at_eight=torch.isclose(b['batch_timestamp'],torch.tensor(.8))
     assert not (at_eight & (b['batch_var_idx']==0)).any()
     assert not (at_eight & (b['batch_var_idx']==1)).any()
+
+
+@pytest.mark.parametrize('setting',['all',None])
+def test_default_and_all_enable_future_exogenous(tmp_path,setting):
+    _,g,data=archive(tmp_path)
+    kwargs={} if setting is None else {'known_future_exogenous_var_ids':setting}
+    ds=ExEnProcessedDataset(data,type='train',global_args=g,**kwargs)
+    assert ds.known_future_exogenous_var_ids=={1,2}
+    b=ds.collate_fn([ds[0]])
+    future=(b['batch_node_type']==2)&b['batch_pad_mask'].bool()
+    assert future.any()
+    assert set(b['batch_var_idx'][future].tolist())=={1,2}
+    assert not b['batch_pred_mask'][future].any()
+
+
+def test_every_processed_config_enables_all_future_exogenous():
+    configs=Path(__file__).resolve().parents[1]/'config/ExEn/processed'
+    assert len(list(configs.glob('*.yaml')))==13
+    for path in configs.glob('*.yaml'):
+        c=yaml.safe_load(path.read_text())
+        assert c['data_config']['dataset_params']['known_future_exogenous_var_ids']=='all',path
+
+
+def test_batch_runner_excludes_dist_and_keeps_outputs_separate(tmp_path):
+    import os,json
+    root=Path(__file__).resolve().parents[1]
+    fake=tmp_path/'fake_python'
+    fake.write_text(f'#!{sys.executable}\nimport json,os,sys\nwith open(os.environ["COMMAND_LOG"],"a") as f:f.write(json.dumps(sys.argv[1:])+"\\n")\n')
+    fake.chmod(0o755)
+    log=tmp_path/'commands.jsonl'
+    env=dict(os.environ,PYTHON=str(fake),DEVICE='cuda:0',RUN_TAG='known_future_test',COMMAND_LOG=str(log))
+    run=subprocess.run(['bash','scripts/run_exen_future_except_dist.sh'],cwd=root,env=env,
+                        text=True,capture_output=True,timeout=30)
+    assert run.returncode==0,run.stderr
+    commands=[json.loads(line) for line in log.read_text().splitlines()]
+    assert len(commands)==12
+    names=[]
+    for command in commands:
+        config=command[command.index('--config_path')+1]
+        name=Path(config).stem;names.append(name)
+        assert command[-2:]==['--device','cuda:0']
+        assert f'results/known_future_test/{name}' in command
+        assert f'model_states/known_future_test/{name}' in command
+    assert set(names)=={'BE','NP','PJM','FR','DE','Energy','Sdwpfm1','Sdwpfm2','Sdwpfh1','Sdwpfh2','Colbun','Rapel'}

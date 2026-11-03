@@ -87,3 +87,13 @@ train-only StandardScaler space, and report raw-unit metrics separately. See
 
 DIST now defaults to streamed CSR legal-edge relations. See
 [sparse backend, execution and benchmarks (中文)](docs/SPARSE_RELATIONS_zh.md).
+
+Processed datasets default to all known future exogenous observations
+(`known_future_exogenous_var_ids: all`). Set `[]` for a history-only ablation.
+Run all datasets except DIST, writing to separate known-future output directories:
+
+```bash
+bash scripts/run_exen_future_except_dist.sh
+# With an available CUDA-enabled PyTorch environment:
+DEVICE=cuda:0 bash scripts/run_exen_future_except_dist.sh
+```

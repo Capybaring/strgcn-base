@@ -5,7 +5,7 @@ from .ExEnPredictionDataset import ExEnPredictionDataset
 
 
 class ExEnProcessedDataset(ExEnPredictionDataset):
-    def __init__(self, data, type, global_args, known_future_exogenous_var_ids=(), **kwargs):
+    def __init__(self, data, type, global_args, known_future_exogenous_var_ids="all", **kwargs):
         self.packet = data[f'{type}_data'] if f'{type}_data' in data else data
         self.global_args = global_args
         self.type = type
@@ -14,7 +14,12 @@ class ExEnProcessedDataset(ExEnPredictionDataset):
         names = self.packet['names']
         self.var2col = {i: i for i in range(len(names))}
         self.exogenous_var_ids = set(self.packet['exogenous_ids'])
-        self.known_future_exogenous_var_ids = set(known_future_exogenous_var_ids)
+        if isinstance(known_future_exogenous_var_ids, str):
+            if known_future_exogenous_var_ids != 'all':
+                raise ValueError('known_future_exogenous_var_ids must be all or a list of IDs')
+            self.known_future_exogenous_var_ids = set(self.exogenous_var_ids)
+        else:
+            self.known_future_exogenous_var_ids = set(known_future_exogenous_var_ids)
         if not self.known_future_exogenous_var_ids <= self.exogenous_var_ids:
             raise ValueError('Known future variable IDs must be exogenous archive column indices')
         global_args['num_of_vals'] = len(names)
