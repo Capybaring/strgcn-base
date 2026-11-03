@@ -63,6 +63,10 @@ def main(args):
     train_config = config_all["train_config"]
     model_config = config_all["model_config"]
     data_config = config_all["data_config"]
+    if getattr(args,'attention_dtype',None) is not None:
+        if model_config['model_name']!='ExEnGraphTransformer':
+            raise ValueError('--attention-dtype requires ExEnGraphTransformer')
+        model_config['model_params']['attention_dtype']=args.attention_dtype
     if getattr(args, 'no_exogenous', False):
         if data_config['dataset_name'] != 'ExEnProcessedDataset':
             raise ValueError('--no-exogenous requires ExEnProcessedDataset')
@@ -137,7 +141,7 @@ def main(args):
         else:
             seen_data = train_data
         # Observation-graph baselines fit statistics on the training split only.
-        scaler.fit(train_data if model_config['model_name'] in ('ExEn', 'STRGCNDirect', 'ExEnAligned') else seen_data)
+        scaler.fit(train_data if model_config['model_name'] in ('ExEn', 'STRGCNDirect', 'ExEnAligned', 'ExEnGraphTransformer') else seen_data)
         # save scaler
         scaler.save(os.path.join(model_save_dir_path, "scaler"))
 
@@ -322,7 +326,7 @@ def main(args):
         # save y_pred, y_true to self.result_save_dir/y_pred.npy, y_true.npy
         np.save(os.path.join(result_save_dir_path, "test_y_pred.npy"), y_pred)
         np.save(os.path.join(result_save_dir_path, "test_y_true.npy"), y_true)
-        if model_config["model_name"] in ("ExEn", "STRGCNDirect", "ExEnAligned"):
+        if model_config["model_name"] in ("ExEn", "STRGCNDirect", "ExEnAligned", "ExEnGraphTransformer"):
             np.save(os.path.join(result_save_dir_path, "test_y_mask.npy"), trainer.last_eval_mask)
             np.save(os.path.join(result_save_dir_path, "test_var_idx.npy"), trainer.last_eval_var_idx)
         if evaluation_scaler is not None:
@@ -330,7 +334,8 @@ def main(args):
             np.save(os.path.join(result_save_dir_path, "test_window_start_seconds.npy"),
                     np.asarray([w[3] for w in test_dataset.packet['windows']]))
             relation_scopes = dict(STRGCNDirect='all_known_variables_to_all_receivers_causal',
-                                   ExEn='role_constrained_exen', ExEnAligned='role_constrained_exen_staged_aligned')
+                                   ExEn='role_constrained_exen', ExEnAligned='role_constrained_exen_staged_aligned',
+                                   ExEnGraphTransformer='role_constrained_exen_staged_attention')
             protocol = dict(model_name=model_config['model_name'],
                 relation_scope=relation_scopes.get(model_config['model_name'],model_config['model_name']),
                 reference='decisionintelligence/DAG@0758990',
@@ -359,6 +364,16 @@ def main(args):
                     total_layers=params.get('n_layer',3 if model_config['model_name']=='STRGCNDirect' else 2)
                                  +(params.get('n_cross_layer',1) if model_config['model_name']=='ExEnAligned' else 0),
                     empty_neighborhood='keep_T0_self_update' if cheb else 'residual_only')
+            if model_config['model_name']=='ExEnGraphTransformer':
+                p=model_config['model_params']
+                protocol['graph_operator']=dict(type='graph_transformer',num_heads=p.get('num_heads',2),
+                    ffn_multiplier=p.get('ffn_multiplier',2),attention_backend=p.get('attention_backend','sdpa'),
+                    attention_dtype=p.get('attention_dtype','float32'),content_scaled_dot_product=True,
+                    use_time_bias=p.get('use_time_bias',True),use_variable_bias=p.get('use_variable_bias',True),
+                    time_bias_init=p.get('time_bias_init',1.),variable_bias_init=p.get('variable_bias_init',.01),
+                    total_layers=p.get('n_layer',2)+p.get('n_cross_layer',1),
+                    empty_neighborhood='residual_and_FFN',bias_implementation='augmented_QK',
+                    parameter_count=sum(param.numel() for param in model.parameters()))
             with open(os.path.join(result_save_dir_path, 'evaluation_protocol.json'), 'w') as f:
                 json.dump(protocol, f, indent=2, ensure_ascii=False, allow_nan=False)
             standard_results = dict(best_validation=best_eval_result, test=test_result,
@@ -410,6 +425,8 @@ if __name__ == "__main__":
 
     parser.add_argument("--device", default=None, help="Override configured device, e.g. cpu or cuda:0")
     parser.add_argument("--no-exogenous", action="store_true", help="Remove ALL historical and future exogenous input nodes")
+    parser.add_argument('--attention-dtype',choices=['float32','auto','bfloat16','float16'],default=None,
+                        help='Graph Transformer attention precision; auto selects BF16/FP16 on CUDA and FP32 on CPU')
     args = parser.parse_args()
     if args.distributed:
         setup_distributed()

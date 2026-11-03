@@ -144,3 +144,18 @@ with STRGCNDirect. See [operator alignment and both input modes (中文)](docs/E
 DEVICE=cuda:0 bash scripts/run_exen_aligned.sh
 DEVICE=cuda:0 bash scripts/run_exen_aligned_no_exogenous.sh
 ```
+
+## ExEnGraphTransformer: content attention with graph biases
+
+The new model keeps ExEn's inputs, roles, causal masks, 2+1 stages and DAG
+evaluation, replacing graph convolution with multi-head attention and FFN.
+Time/variable biases are encoded in augmented Q/K; grouped SDPA avoids CSR
+graph operations. See [Graphormer background, formulas and run guide (中文)](docs/EXEN_GRAPH_TRANSFORMER_zh.md).
+
+```bash
+DEVICE=cuda:0 bash scripts/run_exen_graph_transformer.sh
+DEVICE=cuda:0 bash scripts/run_exen_graph_transformer_no_exogenous.sh
+```
+
+Both runners exclude DIST by default and use separate output directories.
+Set `ATTENTION_DTYPE=auto` for BF16/FP16 CUDA attention; the default is FP32.

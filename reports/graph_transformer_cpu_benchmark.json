@@ -1,0 +1,40 @@
+{
+  "scope": "Same first actual training batch, no optimizer steps; excludes data loading, scaler fitting and warmup. Not full-epoch throughput or accuracy.",
+  "dataset": "NP",
+  "device": "cpu",
+  "torch_version": "2.15.0",
+  "threads": 1,
+  "batch_size": 4,
+  "padded_nodes": 410,
+  "actual_nodes": 1593,
+  "query_count": 60,
+  "use_exogenous": true,
+  "attention_dtype": "float32",
+  "results": [
+    {
+      "model": "ExEnAligned",
+      "parameters": 2337,
+      "median_forward_backward_seconds": 0.06758879206608981,
+      "measurements_seconds": [
+        0.06593045790214092,
+        0.11197020800318569,
+        0.06758879206608981
+      ],
+      "finite_gradients": true,
+      "receiver_chunk_size": 128
+    },
+    {
+      "model": "ExEnGraphTransformer",
+      "parameters": 9294,
+      "median_forward_backward_seconds": 0.019656124990433455,
+      "measurements_seconds": [
+        0.019238458946347237,
+        0.019656124990433455,
+        0.019835540908388793
+      ],
+      "finite_gradients": true,
+      "receiver_chunk_size": 512
+    }
+  ],
+  "graph_transformer_speedup": 3.4385613694960204
+}

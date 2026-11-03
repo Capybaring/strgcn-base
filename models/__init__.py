@@ -3,6 +3,7 @@ from .STRGCN.STRGCN import STRGCN
 from .STRGCN.ExEn import ExEn
 from .STRGCN.STRGCNDirect import STRGCNDirect
 from .STRGCN.ExEnAligned import ExEnAligned
+from .STRGCN.ExEnGraphTransformer import ExEnGraphTransformer
 
 
 def __getattr__(name):
@@ -20,6 +21,7 @@ __all__ = [
     "ExEn",
     "STRGCNDirect",
     "ExEnAligned",
+    "ExEnGraphTransformer",
     "STRGCNCLS",
     "GaussianBasedGraphAggregationMaskGenerator"
 ]

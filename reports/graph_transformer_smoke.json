@@ -1,0 +1,259 @@
+{
+  "scope": "12 actual non-DIST datasets, both input modes. First window of each split checked for matched targets; first training window CPU forward/backward. Not full accuracy evaluation.",
+  "model_name": "ExEnGraphTransformer",
+  "torch_version": "2.15.0",
+  "results": [
+    {
+      "dataset": "BE",
+      "use_exogenous": true,
+      "nodes": 399,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true,
+      "known_future_input_gradient_nonzero": true
+    },
+    {
+      "dataset": "BE",
+      "use_exogenous": false,
+      "nodes": 145,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true
+    },
+    {
+      "dataset": "Colbun",
+      "use_exogenous": true,
+      "nodes": 95,
+      "queries": 4,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true,
+      "known_future_input_gradient_nonzero": true
+    },
+    {
+      "dataset": "Colbun",
+      "use_exogenous": false,
+      "nodes": 48,
+      "queries": 4,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true
+    },
+    {
+      "dataset": "DE",
+      "use_exogenous": true,
+      "nodes": 399,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true,
+      "known_future_input_gradient_nonzero": true
+    },
+    {
+      "dataset": "DE",
+      "use_exogenous": false,
+      "nodes": 145,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true
+    },
+    {
+      "dataset": "Energy",
+      "use_exogenous": true,
+      "nodes": 813,
+      "queries": 17,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true,
+      "known_future_input_gradient_nonzero": true
+    },
+    {
+      "dataset": "Energy",
+      "use_exogenous": false,
+      "nodes": 129,
+      "queries": 17,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true
+    },
+    {
+      "dataset": "FR",
+      "use_exogenous": true,
+      "nodes": 399,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true,
+      "known_future_input_gradient_nonzero": true
+    },
+    {
+      "dataset": "FR",
+      "use_exogenous": false,
+      "nodes": 145,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true
+    },
+    {
+      "dataset": "NP",
+      "use_exogenous": true,
+      "nodes": 399,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true,
+      "known_future_input_gradient_nonzero": true
+    },
+    {
+      "dataset": "NP",
+      "use_exogenous": false,
+      "nodes": 145,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true
+    },
+    {
+      "dataset": "PJM",
+      "use_exogenous": true,
+      "nodes": 399,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true,
+      "known_future_input_gradient_nonzero": true
+    },
+    {
+      "dataset": "PJM",
+      "use_exogenous": false,
+      "nodes": 145,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true
+    },
+    {
+      "dataset": "Rapel",
+      "use_exogenous": true,
+      "nodes": 72,
+      "queries": 7,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true,
+      "known_future_input_gradient_nonzero": true
+    },
+    {
+      "dataset": "Rapel",
+      "use_exogenous": false,
+      "nodes": 48,
+      "queries": 7,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true
+    },
+    {
+      "dataset": "Sdwpfh1",
+      "use_exogenous": true,
+      "nodes": 830,
+      "queries": 13,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true,
+      "known_future_input_gradient_nonzero": true
+    },
+    {
+      "dataset": "Sdwpfh1",
+      "use_exogenous": false,
+      "nodes": 137,
+      "queries": 13,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true
+    },
+    {
+      "dataset": "Sdwpfh2",
+      "use_exogenous": true,
+      "nodes": 833,
+      "queries": 15,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true,
+      "known_future_input_gradient_nonzero": true
+    },
+    {
+      "dataset": "Sdwpfh2",
+      "use_exogenous": false,
+      "nodes": 140,
+      "queries": 15,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true
+    },
+    {
+      "dataset": "Sdwpfm1",
+      "use_exogenous": true,
+      "nodes": 811,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true,
+      "known_future_input_gradient_nonzero": true
+    },
+    {
+      "dataset": "Sdwpfm1",
+      "use_exogenous": false,
+      "nodes": 134,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true
+    },
+    {
+      "dataset": "Sdwpfm2",
+      "use_exogenous": true,
+      "nodes": 813,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true,
+      "known_future_input_gradient_nonzero": true
+    },
+    {
+      "dataset": "Sdwpfm2",
+      "use_exogenous": false,
+      "nodes": 136,
+      "queries": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "all_three_FFNs_trainable": true,
+      "target_samples_and_windows_matched": true
+    }
+  ]
+}

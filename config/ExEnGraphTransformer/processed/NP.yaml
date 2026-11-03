@@ -1,0 +1,75 @@
+global_config:
+  task_name: prediction
+  exen_data_path: ./data/processed/NP.npz
+data_config:
+  data_processor_name: ExEnProcessedProcessor
+  scaler_name: ExEnProcessedMinMaxScaler
+  scaler_params: {}
+  dataset_name: ExEnProcessedDataset
+  dataset_params:
+    known_future_exogenous_var_ids: all
+  dataloader_params:
+    shuffle: true
+    num_workers: 0
+    pin_memory: false
+    drop_last: false
+  data_processor_params:
+    history_len: 604800
+    forecast_len: 86400
+    target_names:
+    - OT
+    split_ratios:
+    - 0.6
+    - 0.2
+    - 0.2
+model_config:
+  model_name: ExEnGraphTransformer
+  model_params:
+    c_in: 1
+    c_out: 1
+    hid_dim: 16
+    node_dim: 16
+    n_layer: 2
+    dropout: 0.0
+    use_norm: true
+    time_embedding_type: rbf
+    receiver_chunk_size: 512
+    n_cross_layer: 1
+    num_heads: 2
+    ffn_multiplier: 2
+    attention_backend: sdpa
+    attention_dtype: float32
+    attention_dropout: 0.0
+    use_time_bias: true
+    use_variable_bias: true
+    time_bias_init: 1.0
+    variable_bias_init: 0.01
+train_config:
+  batch_size: 4
+  load_checkpoint: false
+  metrics:
+  - mse_norm
+  - mae_norm
+  - rmse_norm
+  - mse
+  - mae
+  - rmse
+  random_seed: 3407
+  device: cpu
+  optimizer_name: Adam
+  optimizer_params:
+    lr: 0.003
+    weight_decay: 0.0
+  scheduler_name: StepLR
+  scheduler_params:
+    step_size: 10
+    gamma: 0.5
+  trainer_name: ExEnDAGForecastTrainer
+  trainer_params:
+    max_epoch_num: 30
+    enable_early_stop: true
+    early_stop_patience: 5
+    eval_metric_key: mse_norm
+    eval_metric_min_is_best: true
+    enable_autocast: false
+    do_inverse_scaling: false
