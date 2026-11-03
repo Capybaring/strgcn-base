@@ -63,6 +63,11 @@ def main(args):
     train_config = config_all["train_config"]
     model_config = config_all["model_config"]
     data_config = config_all["data_config"]
+    if getattr(args, 'no_exogenous', False):
+        if data_config['dataset_name'] != 'ExEnProcessedDataset':
+            raise ValueError('--no-exogenous requires ExEnProcessedDataset')
+        data_config['dataset_params'] = dict(data_config.get('dataset_params', {}), use_exogenous=False)
+
     task_name = global_args.get("task_name")
 
     # basic config
@@ -333,6 +338,10 @@ def main(args):
                 metric_spaces={name: ('train_standardized' if name.endswith('_norm') else 'original_units')
                                for name in train_config['metrics']},
                 split=global_args.get('exen_processed_summary'),
+                use_exogenous=train_dataset.use_exogenous,
+                forecast_inputs=("Y_history_only" if not train_dataset.use_exogenous else
+                                 "Y_history_X_history_and_known_future" if train_dataset.known_future_exogenous_var_ids else
+                                 "Y_history_and_X_history"),
                 known_future_exogenous_var_ids=sorted(train_dataset.known_future_exogenous_var_ids),
                 missingness='original_mask & finite(raw_value) & (raw_value != 0)',
                 irregular_extension='mean over valid target cells within each window; equal weight per window')
@@ -386,6 +395,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--device", default=None, help="Override configured device, e.g. cpu or cuda:0")
+    parser.add_argument("--no-exogenous", action="store_true", help="Remove ALL historical and future exogenous input nodes")
     args = parser.parse_args()
     if args.distributed:
         setup_distributed()

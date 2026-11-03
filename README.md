@@ -97,3 +97,12 @@ bash scripts/run_exen_future_except_dist.sh
 # With an available CUDA-enabled PyTorch environment:
 DEVICE=cuda:0 bash scripts/run_exen_future_except_dist.sh
 ```
+
+For a matched Y-history-only ablation (removes both historical and future X),
+add `--no-exogenous` to `main.py`, or run:
+
+```bash
+DEVICE=cuda:0 bash scripts/run_exen_no_exogenous_except_dist.sh
+```
+
+See [input ablations and their interpretation (中文)](docs/EXOGENOUS_ABLATION_zh.md).

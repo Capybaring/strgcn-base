@@ -1,0 +1,149 @@
+{
+  "scope": "First actual training window per non-DIST dataset; same full-data splits and training statistics. CPU forward/backward only, not full accuracy evaluation.",
+  "results": [
+    {
+      "dataset": "BE",
+      "y_only_nodes": 145,
+      "query_count": 19,
+      "matched_targets_and_values": true,
+      "same_windows_and_target_scaling": true,
+      "observed_roles": [
+        1,
+        3
+      ],
+      "finite_backward": true
+    },
+    {
+      "dataset": "Colbun",
+      "y_only_nodes": 48,
+      "query_count": 4,
+      "matched_targets_and_values": true,
+      "same_windows_and_target_scaling": true,
+      "observed_roles": [
+        1,
+        3
+      ],
+      "finite_backward": true
+    },
+    {
+      "dataset": "DE",
+      "y_only_nodes": 145,
+      "query_count": 19,
+      "matched_targets_and_values": true,
+      "same_windows_and_target_scaling": true,
+      "observed_roles": [
+        1,
+        3
+      ],
+      "finite_backward": true
+    },
+    {
+      "dataset": "Energy",
+      "y_only_nodes": 129,
+      "query_count": 17,
+      "matched_targets_and_values": true,
+      "same_windows_and_target_scaling": true,
+      "observed_roles": [
+        1,
+        3
+      ],
+      "finite_backward": true
+    },
+    {
+      "dataset": "FR",
+      "y_only_nodes": 145,
+      "query_count": 19,
+      "matched_targets_and_values": true,
+      "same_windows_and_target_scaling": true,
+      "observed_roles": [
+        1,
+        3
+      ],
+      "finite_backward": true
+    },
+    {
+      "dataset": "NP",
+      "y_only_nodes": 145,
+      "query_count": 19,
+      "matched_targets_and_values": true,
+      "same_windows_and_target_scaling": true,
+      "observed_roles": [
+        1,
+        3
+      ],
+      "finite_backward": true
+    },
+    {
+      "dataset": "PJM",
+      "y_only_nodes": 145,
+      "query_count": 19,
+      "matched_targets_and_values": true,
+      "same_windows_and_target_scaling": true,
+      "observed_roles": [
+        1,
+        3
+      ],
+      "finite_backward": true
+    },
+    {
+      "dataset": "Rapel",
+      "y_only_nodes": 48,
+      "query_count": 7,
+      "matched_targets_and_values": true,
+      "same_windows_and_target_scaling": true,
+      "observed_roles": [
+        1,
+        3
+      ],
+      "finite_backward": true
+    },
+    {
+      "dataset": "Sdwpfh1",
+      "y_only_nodes": 137,
+      "query_count": 13,
+      "matched_targets_and_values": true,
+      "same_windows_and_target_scaling": true,
+      "observed_roles": [
+        1,
+        3
+      ],
+      "finite_backward": true
+    },
+    {
+      "dataset": "Sdwpfh2",
+      "y_only_nodes": 140,
+      "query_count": 15,
+      "matched_targets_and_values": true,
+      "same_windows_and_target_scaling": true,
+      "observed_roles": [
+        1,
+        3
+      ],
+      "finite_backward": true
+    },
+    {
+      "dataset": "Sdwpfm1",
+      "y_only_nodes": 134,
+      "query_count": 19,
+      "matched_targets_and_values": true,
+      "same_windows_and_target_scaling": true,
+      "observed_roles": [
+        1,
+        3
+      ],
+      "finite_backward": true
+    },
+    {
+      "dataset": "Sdwpfm2",
+      "y_only_nodes": 136,
+      "query_count": 19,
+      "matched_targets_and_values": true,
+      "same_windows_and_target_scaling": true,
+      "observed_roles": [
+        1,
+        3
+      ],
+      "finite_backward": true
+    }
+  ]
+}

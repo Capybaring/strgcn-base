@@ -5,10 +5,13 @@ from .ExEnPredictionDataset import ExEnPredictionDataset
 
 
 class ExEnProcessedDataset(ExEnPredictionDataset):
-    def __init__(self, data, type, global_args, known_future_exogenous_var_ids="all", **kwargs):
+    def __init__(self, data, type, global_args, known_future_exogenous_var_ids="all", use_exogenous=True, **kwargs):
         self.packet = data[f'{type}_data'] if f'{type}_data' in data else data
         self.global_args = global_args
         self.type = type
+        if not isinstance(use_exogenous, bool):
+            raise ValueError("use_exogenous must be true or false")
+        self.use_exogenous = use_exogenous
         self.enable_agg_mask = False
         self.output_style = 'long'
         names = self.packet['names']
@@ -22,6 +25,8 @@ class ExEnProcessedDataset(ExEnPredictionDataset):
             self.known_future_exogenous_var_ids = set(known_future_exogenous_var_ids)
         if not self.known_future_exogenous_var_ids <= self.exogenous_var_ids:
             raise ValueError('Known future variable IDs must be exogenous archive column indices')
+        if not self.use_exogenous:
+            self.known_future_exogenous_var_ids = set()
         global_args['num_of_vals'] = len(names)
         global_args['exogenous_var_indices'] = sorted(self.exogenous_var_ids)
         global_args['exen_var2col'] = self.var2col
@@ -37,6 +42,8 @@ class ExEnProcessedDataset(ExEnPredictionDataset):
         future = times >= p['history_seconds']
         # Remove unavailable future X before padding/dense graph construction.
         keep = ~future | np.isin(var, p['target_ids'] + list(self.known_future_exogenous_var_ids))
+        if not self.use_exogenous:
+            keep &= np.isin(var, p["target_ids"])
         row, var, times, future = row[keep], var[keep], times[keep], future[keep]
         values = p['values'][a:b][row, var].copy()
         if 'scale_min' in p:
