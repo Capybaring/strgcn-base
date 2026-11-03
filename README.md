@@ -131,3 +131,16 @@ DEVICE=cuda:0 bash scripts/run_strgcn_direct_no_exogenous.sh
 
 Results go to `results/strgcn_direct_no_exogenous/`; compare with
 `results/strgcn_direct_known_future/` in the same DAG standardized metric space.
+
+## ExEnAligned: ExEn roles/stages with the same STRGCN operator
+
+`ExEnAligned` retains the original role/status embeddings, three relation masks
+and 2 temporal + 1 X-to-Y stages, while aligning the variable logit scale,
+Chebyshev T0/T1 convolution, receiver-side factors and per-layer time features
+with STRGCNDirect. See [operator alignment and both input modes (中文)](docs/EXEN_ALIGNED_zh.md).
+
+```bash
+# Both commands default to all 12 non-DIST datasets, using separate directories:
+DEVICE=cuda:0 bash scripts/run_exen_aligned.sh
+DEVICE=cuda:0 bash scripts/run_exen_aligned_no_exogenous.sh
+```

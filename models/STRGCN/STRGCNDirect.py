@@ -34,6 +34,24 @@ def time_features(encoder, tt, valid):
     return p.unsqueeze(0) if p.ndim == 2 else p
 
 
+def receiver_cheb_convolution(x, apply_support, weight_t, weight_s):
+    """Original STRGCN Chebyshev recurrence and receiver-side factorization.
+
+    Shared by the joint and aligned ExEn controls. weight_s is a sequence
+    of [B,L,D] variable factors, one per polynomial order.
+    """
+    prev2 = x
+    out = (prev2 * weight_t).sum(-1, keepdim=True) * weight_s[0]
+    if len(weight_s) > 1:
+        prev1 = apply_support(x)
+        out = out + (prev1 * weight_t).sum(-1, keepdim=True) * weight_s[1]
+    for k in range(2, len(weight_s)):
+        current = 2 * apply_support(prev1) - prev2
+        out = out + (current * weight_t).sum(-1, keepdim=True) * weight_s[k]
+        prev2, prev1 = prev1, current
+    return out
+
+
 class DirectSTRGCNLayer(nn.Module):
     def __init__(self, dim, node_dim, num_vars, dropout, use_bias, use_norm,
                  time_embedding_type, gcn_type, gcn_depth, backend, chunk_size):
@@ -98,15 +116,9 @@ class DirectSTRGCNLayer(nn.Module):
         else:
             # Original low_rank_cheb_graph_conv: propagate T_k(A)H, THEN
             # apply the receiver's time/variable factor for each order k.
-            prev2 = x
-            out = (prev2*weight_t).sum(-1,keepdim=True)*self.middle_weight_S_Embedding[0](vars_idx)
-            if self.gcn_depth > 1:
-                prev1 = self.support_apply(x,p,vars_idx,tt,valid,query,plan)
-                out = out + (prev1*weight_t).sum(-1,keepdim=True)*self.middle_weight_S_Embedding[1](vars_idx)
-            for k in range(2,self.gcn_depth):
-                current = 2*self.support_apply(prev1,p,vars_idx,tt,valid,query,plan)-prev2
-                out = out + (current*weight_t).sum(-1,keepdim=True)*self.middle_weight_S_Embedding[k](vars_idx)
-                prev2,prev1 = prev1,current
+            out = receiver_cheb_convolution(
+                x, lambda value: self.support_apply(value,p,vars_idx,tt,valid,query,plan),
+                weight_t, [embedding(vars_idx) for embedding in self.middle_weight_S_Embedding])
         if self.middle_bias is not None:
             out = out+self.middle_bias
         out = self.norm(self.lambda_*self.dropout(F.relu(out))+(1-self.lambda_)*x)

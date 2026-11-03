@@ -119,8 +119,7 @@ class ExEn(nn.Module):
             raise ValueError('ExEn expects scalar observation nodes (c_in=c_out=1)')
         if use_efficient_gcn or use_info_agg or use_revin:
             raise ValueError('ExEn does not use Sandwich, aggregation or RevIN')
-        if gcn_type != 'gcn' or gcn_depth != 1:
-            raise ValueError('ExEn uses direct masked gcn (gcn_depth=1); stack n_layer instead')
+        self._validate_operator(gcn_type, gcn_depth)
         if time_embedding_type not in ('rbf', 'rope', 'transformer') or hid_dim % 2:
             raise ValueError('Use an even hid_dim and rbf/rope/transformer time embedding')
         if n_layer < 1 or n_cross_layer < 1:
@@ -151,11 +150,18 @@ class ExEn(nn.Module):
         self.role_embedding = nn.Embedding(2, hid_dim)
         self.status_embedding = nn.Embedding(3, hid_dim)
         args = (hid_dim, node_dim, self.num_vars, dropout, use_bias, use_norm)
-        self.temporal_layers = nn.ModuleList([DirectedRelationLayer(*args) for _ in range(n_layer)])
-        self.cross_layers = nn.ModuleList([DirectedRelationLayer(*args, cross=True) for _ in range(n_cross_layer)])
+        self.temporal_layers = nn.ModuleList([self._make_relation_layer(*args) for _ in range(n_layer)])
+        self.cross_layers = nn.ModuleList([self._make_relation_layer(*args, cross=True) for _ in range(n_cross_layer)])
         self.lambda_ = nn.Parameter(torch.tensor(0.5))
         # Original STRGCN decoder is a one-layer MLP (nn.Linear), preserved here.
         self.projection = nn.Linear(hid_dim, c_out)
+
+    def _validate_operator(self, gcn_type, gcn_depth):
+        if gcn_type != 'gcn' or gcn_depth != 1:
+            raise ValueError('ExEn uses direct masked gcn (gcn_depth=1); stack n_layer instead')
+
+    def _make_relation_layer(self, *args, cross=False):
+        return DirectedRelationLayer(*args, cross=cross)
 
     def forward(self, batch_value, batch_timestamp, batch_var_idx,
                 batch_pred_mask=None, batch_pad_mask=None, batch_time_id=None,

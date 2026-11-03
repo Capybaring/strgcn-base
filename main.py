@@ -137,7 +137,7 @@ def main(args):
         else:
             seen_data = train_data
         # Observation-graph baselines fit statistics on the training split only.
-        scaler.fit(train_data if model_config['model_name'] in ('ExEn', 'STRGCNDirect') else seen_data)
+        scaler.fit(train_data if model_config['model_name'] in ('ExEn', 'STRGCNDirect', 'ExEnAligned') else seen_data)
         # save scaler
         scaler.save(os.path.join(model_save_dir_path, "scaler"))
 
@@ -322,15 +322,17 @@ def main(args):
         # save y_pred, y_true to self.result_save_dir/y_pred.npy, y_true.npy
         np.save(os.path.join(result_save_dir_path, "test_y_pred.npy"), y_pred)
         np.save(os.path.join(result_save_dir_path, "test_y_true.npy"), y_true)
-        if model_config["model_name"] in ("ExEn", "STRGCNDirect"):
+        if model_config["model_name"] in ("ExEn", "STRGCNDirect", "ExEnAligned"):
             np.save(os.path.join(result_save_dir_path, "test_y_mask.npy"), trainer.last_eval_mask)
             np.save(os.path.join(result_save_dir_path, "test_var_idx.npy"), trainer.last_eval_var_idx)
         if evaluation_scaler is not None:
             np.save(os.path.join(result_save_dir_path, "test_window_id.npy"), trainer.last_eval_window_id)
             np.save(os.path.join(result_save_dir_path, "test_window_start_seconds.npy"),
                     np.asarray([w[3] for w in test_dataset.packet['windows']]))
+            relation_scopes = dict(STRGCNDirect='all_known_variables_to_all_receivers_causal',
+                                   ExEn='role_constrained_exen', ExEnAligned='role_constrained_exen_staged_aligned')
             protocol = dict(model_name=model_config['model_name'],
-                relation_scope=('all_known_variables_to_all_receivers_causal' if model_config['model_name']=='STRGCNDirect' else 'role_constrained_exen'),
+                relation_scope=relation_scopes.get(model_config['model_name'],model_config['model_name']),
                 reference='decisionintelligence/DAG@0758990',
                 primary_metric='mse_norm', primary_space='train_standardized',
                 aggregation='mean_of_forecast_window_metrics', prediction_space='original_units',
@@ -347,6 +349,16 @@ def main(args):
                 known_future_exogenous_var_ids=sorted(train_dataset.known_future_exogenous_var_ids),
                 missingness='original_mask & finite(raw_value) & (raw_value != 0)',
                 irregular_extension='mean over valid target cells within each window; equal weight per window')
+            if model_config['model_name'] in ('STRGCNDirect','ExEnAligned'):
+                params = model_config['model_params']
+                cheb = params.get('gcn_type','cheb') == 'cheb'
+                protocol['graph_operator'] = dict(gcn_type=params.get('gcn_type','cheb'),
+                    chebyshev_terms=params.get('gcn_depth',2), variable_logit_normalizer=1.0,
+                    factorization='receiver_after_propagation' if cheb else 'source_before_propagation',
+                    layer_time_features='independent',
+                    total_layers=params.get('n_layer',3 if model_config['model_name']=='STRGCNDirect' else 2)
+                                 +(params.get('n_cross_layer',1) if model_config['model_name']=='ExEnAligned' else 0),
+                    empty_neighborhood='keep_T0_self_update' if cheb else 'residual_only')
             with open(os.path.join(result_save_dir_path, 'evaluation_protocol.json'), 'w') as f:
                 json.dump(protocol, f, indent=2, ensure_ascii=False, allow_nan=False)
             standard_results = dict(best_validation=best_eval_result, test=test_result,
