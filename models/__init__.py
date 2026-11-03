@@ -1,6 +1,7 @@
 
 from .STRGCN.STRGCN import STRGCN
 from .STRGCN.ExEn import ExEn
+from .STRGCN.STRGCNDirect import STRGCNDirect
 
 
 def __getattr__(name):
@@ -16,6 +17,7 @@ def __getattr__(name):
 __all__ = [
     "STRGCN",
     "ExEn",
+    "STRGCNDirect",
     "STRGCNCLS",
     "GaussianBasedGraphAggregationMaskGenerator"
 ]

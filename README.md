@@ -106,3 +106,18 @@ DEVICE=cuda:0 bash scripts/run_exen_no_exogenous_except_dist.sh
 ```
 
 See [input ablations and their interpretation (中文)](docs/EXOGENOUS_ABLATION_zh.md).
+
+## STRGCNDirect: joint relations without Sandwich
+
+For a role-free control, `STRGCNDirect` applies the original middle-stage joint
+time/variable relation and low-rank Chebyshev convolution directly to observation
+nodes. It includes known future inputs, excludes query nodes as message sources,
+and removes Sandwich and hypernode aggregation. ExEn experiments stay separate.
+See [formulas, data and run guide (中文)](docs/STRGCN_DIRECT_zh.md).
+
+```bash
+# All 12 non-DIST datasets, with CUDA-enabled PyTorch:
+DEVICE=cuda:0 bash scripts/run_strgcn_direct.sh
+# Include DIST after checking its history/forecast lengths:
+INCLUDE_DIST=1 DEVICE=cuda:0 bash scripts/run_strgcn_direct.sh
+```

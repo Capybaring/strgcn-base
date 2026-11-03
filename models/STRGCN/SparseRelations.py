@@ -47,7 +47,7 @@ def build_sparse_relations(timestamp, var_idx, node_type, valid):
 
 
 def csr_block(p_receiver, p_source, source_value, u_receiver, v_source,
-              degrees, time_scale, var_scale, cross):
+              degrees, time_scale, var_scale, cross, variable_normalizer=None):
     """Sample dot products only at legal CSR entries, softmax by CSR row."""
     crow = torch.cat((degrees.new_zeros(1), degrees.cumsum(0)))
     edge_count = int(crow[-1])
@@ -59,7 +59,8 @@ def csr_block(p_receiver, p_source, source_value, u_receiver, v_source,
     logits = torch.sparse.sampled_addmm(pattern, p_receiver, p_source.T, beta=0).values() * time_scale
     if cross:
         support = torch.sparse.sampled_addmm(pattern, u_receiver, v_source.T, beta=0).values()
-        logits = logits + var_scale * support / math.sqrt(u_receiver.shape[-1])
+        normalizer = math.sqrt(u_receiver.shape[-1]) if variable_normalizer is None else variable_normalizer
+        logits = logits + var_scale * support / normalizer
     maximum = torch.segment_reduce(logits, 'max', lengths=degrees)
     exps = (logits - maximum.repeat_interleave(degrees, output_size=edge_count)).exp()
     denominator = torch.segment_reduce(exps, 'sum', lengths=degrees)

@@ -1,0 +1,161 @@
+{
+  "scope": "First actual training window per non-DIST dataset; full configured 3-layer STRGCNDirect, Cheb depth 2, train-only scaling fitted on all training windows. CPU only; not an accuracy evaluation.",
+  "torch_version": "2.15.0",
+  "results": [
+    {
+      "dataset": "BE",
+      "nodes": 399,
+      "known_future_nodes": 36,
+      "query_nodes": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "future_input_gradient_nonzero": true,
+      "forward_backward_seconds": 1.0136
+    },
+    {
+      "dataset": "Colbun",
+      "nodes": 95,
+      "known_future_nodes": 5,
+      "query_nodes": 4,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "future_input_gradient_nonzero": true,
+      "forward_backward_seconds": 0.0101
+    },
+    {
+      "dataset": "DE",
+      "nodes": 399,
+      "known_future_nodes": 36,
+      "query_nodes": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "future_input_gradient_nonzero": true,
+      "forward_backward_seconds": 0.1014
+    },
+    {
+      "dataset": "Energy",
+      "nodes": 813,
+      "known_future_nodes": 90,
+      "query_nodes": 17,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "future_input_gradient_nonzero": true,
+      "forward_backward_seconds": 0.4122
+    },
+    {
+      "dataset": "FR",
+      "nodes": 399,
+      "known_future_nodes": 36,
+      "query_nodes": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "future_input_gradient_nonzero": true,
+      "forward_backward_seconds": 0.1093
+    },
+    {
+      "dataset": "NP",
+      "nodes": 399,
+      "known_future_nodes": 36,
+      "query_nodes": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "future_input_gradient_nonzero": true,
+      "forward_backward_seconds": 0.1113
+    },
+    {
+      "dataset": "PJM",
+      "nodes": 399,
+      "known_future_nodes": 36,
+      "query_nodes": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "future_input_gradient_nonzero": true,
+      "forward_backward_seconds": 0.1116
+    },
+    {
+      "dataset": "Rapel",
+      "nodes": 72,
+      "known_future_nodes": 4,
+      "query_nodes": 7,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "future_input_gradient_nonzero": true,
+      "forward_backward_seconds": 0.0078
+    },
+    {
+      "dataset": "Sdwpfh1",
+      "nodes": 830,
+      "known_future_nodes": 87,
+      "query_nodes": 13,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "future_input_gradient_nonzero": true,
+      "forward_backward_seconds": 0.4372
+    },
+    {
+      "dataset": "Sdwpfh2",
+      "nodes": 833,
+      "known_future_nodes": 87,
+      "query_nodes": 15,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "future_input_gradient_nonzero": true,
+      "forward_backward_seconds": 0.428
+    },
+    {
+      "dataset": "Sdwpfm1",
+      "nodes": 811,
+      "known_future_nodes": 85,
+      "query_nodes": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "future_input_gradient_nonzero": true,
+      "forward_backward_seconds": 0.4134
+    },
+    {
+      "dataset": "Sdwpfm2",
+      "nodes": 813,
+      "known_future_nodes": 85,
+      "query_nodes": 19,
+      "finite_backward": true,
+      "query_input_gradient_zero": true,
+      "future_input_gradient_nonzero": true,
+      "forward_backward_seconds": 0.4137
+    }
+  ],
+  "actual_be_cli": {
+    "epochs": 1,
+    "max_windows_per_split": 4,
+    "device": "cpu",
+    "checkpoint_roundtrip_and_test_evaluation": true,
+    "test_metrics": {
+      "loss": 15.685874178591897,
+      "mse_norm": 15.685874178591897,
+      "mae_norm": 3.915021076519999,
+      "rmse_norm": 3.952053930263558,
+      "mse": 3115.853202214572,
+      "mae": 55.178289715372095,
+      "rmse": 55.700230592039226,
+      "forecast_window_count": 4,
+      "observed_count_by_target": [
+        67
+      ],
+      "target_ids": [
+        0
+      ],
+      "target_names": [
+        "OT"
+      ],
+      "primary_metric": "mse_norm",
+      "primary_space": "train_standardized",
+      "aggregation": "mean_of_forecast_window_metrics",
+      "prediction_space": "original_units",
+      "reference": "decisionintelligence/DAG@0758990"
+    },
+    "primary_space": "train_standardized",
+    "known_future_ids": [
+      1,
+      2
+    ]
+  }
+}

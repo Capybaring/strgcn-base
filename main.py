@@ -136,8 +136,8 @@ def main(args):
             seen_data = processed_data["seen_data"]
         else:
             seen_data = train_data
-        # ExEn statistics are fitted on the training split only.
-        scaler.fit(train_data if model_config['model_name'] == 'ExEn' else seen_data)
+        # Observation-graph baselines fit statistics on the training split only.
+        scaler.fit(train_data if model_config['model_name'] in ('ExEn', 'STRGCNDirect') else seen_data)
         # save scaler
         scaler.save(os.path.join(model_save_dir_path, "scaler"))
 
@@ -322,14 +322,16 @@ def main(args):
         # save y_pred, y_true to self.result_save_dir/y_pred.npy, y_true.npy
         np.save(os.path.join(result_save_dir_path, "test_y_pred.npy"), y_pred)
         np.save(os.path.join(result_save_dir_path, "test_y_true.npy"), y_true)
-        if model_config["model_name"] == "ExEn":
+        if model_config["model_name"] in ("ExEn", "STRGCNDirect"):
             np.save(os.path.join(result_save_dir_path, "test_y_mask.npy"), trainer.last_eval_mask)
             np.save(os.path.join(result_save_dir_path, "test_var_idx.npy"), trainer.last_eval_var_idx)
         if evaluation_scaler is not None:
             np.save(os.path.join(result_save_dir_path, "test_window_id.npy"), trainer.last_eval_window_id)
             np.save(os.path.join(result_save_dir_path, "test_window_start_seconds.npy"),
                     np.asarray([w[3] for w in test_dataset.packet['windows']]))
-            protocol = dict(reference='decisionintelligence/DAG@0758990',
+            protocol = dict(model_name=model_config['model_name'],
+                relation_scope=('all_known_variables_to_all_receivers_causal' if model_config['model_name']=='STRGCNDirect' else 'role_constrained_exen'),
+                reference='decisionintelligence/DAG@0758990',
                 primary_metric='mse_norm', primary_space='train_standardized',
                 aggregation='mean_of_forecast_window_metrics', prediction_space='original_units',
                 evaluation_scaler=evaluation_scaler.manifest(),
