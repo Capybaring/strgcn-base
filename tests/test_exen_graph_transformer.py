@@ -136,7 +136,7 @@ def test_cli_both_modes_and_dag_metric_space(tmp_path,no_exogenous):
     assert p['model_name']=='ExEnGraphTransformer' and p['use_exogenous'] is (not no_exogenous)
     assert p['known_future_exogenous_var_ids']==([] if no_exogenous else [1,2])
     assert p['graph_operator']['attention_dtype']=='auto'
-    assert p['graph_operator']['total_layers']==3 and p['graph_operator']['bias_implementation']=='augmented_QK'
+    assert p['graph_operator']['total_layers']==7 and p['graph_operator']['bias_implementation']=='augmented_QK'
     from utils.dag_evaluation import DAGEvaluationScaler
     scaler=DAGEvaluationScaler().load(tmp_path/'model/evaluation_scaler.npz')
     mask=np.load(tmp_path/'result/test_y_mask.npy').astype(bool);ids=np.load(tmp_path/'result/test_var_idx.npy')
@@ -155,8 +155,9 @@ def test_configs_match_aligned_tasks_and_training():
         c=yaml.safe_load(path.read_text());old=yaml.safe_load((ROOT/'config/ExEnAligned/processed'/path.name).read_text())
         assert c['data_config']==old['data_config'] and c['train_config']==old['train_config']
         assert c['global_config']==old['global_config']
-        p=c['model_config']['model_params'];assert p['n_layer']==2 and p['n_cross_layer']==1
-        assert p['hid_dim']==16 and p['num_heads']==2 and p['attention_dtype']=='float32'
+        p=c['model_config']['model_params'];assert p['n_layer']==4 and p['n_cross_layer']==3
+        assert p['hid_dim']==32 and p['num_heads']==4 and p['attention_dtype']=='float32'
+        assert p['dropout']==0.3 and p['attention_dropout']==0.0
 
 
 @pytest.mark.parametrize('no_x',[False,True])

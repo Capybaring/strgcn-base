@@ -147,7 +147,7 @@ DEVICE=cuda:0 bash scripts/run_exen_aligned_no_exogenous.sh
 
 ## ExEnGraphTransformer: content attention with graph biases
 
-The new model keeps ExEn's inputs, roles, causal masks, 2+1 stages and DAG
+The new model keeps ExEn's inputs, roles, causal masks, staged propagation and DAG
 evaluation, replacing graph convolution with multi-head attention and FFN.
 Time/variable biases are encoded in augmented Q/K; grouped SDPA avoids CSR
 graph operations. See [Graphormer background, formulas and run guide (中文)](docs/EXEN_GRAPH_TRANSFORMER_zh.md).
@@ -157,5 +157,7 @@ DEVICE=cuda:0 bash scripts/run_exen_graph_transformer.sh
 DEVICE=cuda:0 bash scripts/run_exen_graph_transformer_no_exogenous.sh
 ```
 
+Current dataset configs use 4 temporal layers + 3 X→Y layers, 4 heads,
+hidden dimension 32 and dropout 0.3 (attention dropout remains 0).
 Both runners exclude DIST by default and use separate output directories.
 Set `ATTENTION_DTYPE=auto` for BF16/FP16 CUDA attention; the default is FP32.

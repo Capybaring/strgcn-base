@@ -2,7 +2,7 @@
 
 新模型 `ExEnGraphTransformer` 在观测节点上使用多头注意力和 FFN，替换 ExEnAligned 的
 Chebyshev 与低秩图卷积。保留原数据接口、数值/时间编码、预测 token、角色/状态编码、
-两层同变量时间传播、一层 X→Y 传播、全局残差、线性预测头，以及 DAG 评估口径。
+分阶段的同变量时间传播和 X→Y 传播、全局残差、线性预测头，以及 DAG 评估口径。
 不使用 Sandwich、超节点或 CSR 图卷积。新配置和结果使用独立目录。
 
 ## Graphormer 与本模型
@@ -58,12 +58,15 @@ h_i'=\tilde h_i+\operatorname{Dropout}\left(\operatorname{FFN}(\operatorname{LN}
 $$
 
 FFN 为 Linear → GELU → dropout → Linear。跨变量阶段仅更新 Y，X 保持原状态。
-空邻域的注意力消息及输出投影偏置均置零，仍执行自身残差与 FFN；无外生模式下三层都参与训练。
+空邻域的注意力消息及输出投影偏置均置零，仍执行自身残差与 FFN；无外生模式下所有层都参与训练。
 全局残差与线性输出头不变，只对未来有效 Y 查询计算训练和测试误差。
 
 ## 参数与消融
 
-默认 `hid_dim: 16`、`num_heads: 2`、FFN 宽度倍数 2、2 层时间 + 1 层 X→Y。
+当前所有数据集 YAML 配置为 `hid_dim: 32`、`num_heads: 4`、`dropout: 0.3`、
+`n_layer: 4`、`n_cross_layer: 3`，共 7 层，每头内容维度 8。
+FFN 宽度倍数仍为 2，`attention_dropout: 0.0`；这里的 dropout 0.3 用于残差分支和 FFN。
+模型构造函数的默认参数保持原值，运行实验时以 YAML 显式参数为准。
 注意力、FFN、角色和变量嵌入会使参数量增加，`metrics.json` 会记录参数数量。
 与旧图卷积比较时，这属于算子/结构替换，不是相同参数量的单因素实验。
 
@@ -164,5 +167,7 @@ python examples/benchmark_exen_graph_transformer.py --dataset NP --device cuda:0
 测试覆盖 SDPA 与显式公式的输出/所有参数梯度一致、内容相关注意力、目标及晚时刻输入无泄漏、
 空邻域、padding、节点乱序、无外生时三层 FFN 可训练，以及两种模式的完整 CLI 和 DAG 量纲。
 本地 NP CPU、batch=4、FP32、3 次计时的前向/反向中位数约 0.0676 秒（ExEnAligned）和 0.0197 秒（新版），
-约 3.44 倍；各自使用默认接收块 128/512，新版参数量 9294、旧版 2337。
+约 3.44 倍；当时使用接收块 128/512，新版参数量 9294、旧版 2337。
+该历史基准使用新版 2+1 层、隐藏维度 16、2 个头、dropout 0，
+不代表当前 4+3 层、隐藏维度 32 配置的速度。
 这是当前实现和配置的短批次结果，不是同参数量或同分块大小的纯算子对照，CUDA 尚未实测。
