@@ -29,13 +29,13 @@ model_config:
     c_out: 1
     hid_dim: 16
     node_dim: 16
-    n_layer: 2
+    n_layer: 3
     dropout: 0.0
     use_norm: true
     time_embedding_type: rbf
     receiver_chunk_size: 512
-    n_cross_layer: 1
-    num_heads: 2
+    n_cross_layer: 2
+    num_heads: 4
     ffn_multiplier: 2
     attention_backend: sdpa
     attention_dtype: float32
