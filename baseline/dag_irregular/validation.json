@@ -1,0 +1,204 @@
+{
+  "date": "2026-11-07",
+  "base_commit": "a70b50b",
+  "upstream_commit": "0758990e2c73bb54138ea3e7b11a35cbc5476bcc",
+  "environment": {
+    "python": "3.12",
+    "torch": "2.15.0",
+    "device": "CPU",
+    "threads": 1
+  },
+  "existing_tests": {
+    "command": "python -m pytest tests -q",
+    "passed": 149,
+    "warnings": 9
+  },
+  "new_tests": {
+    "command": "python -m pytest baseline/dag_irregular -q",
+    "passed": 10
+  },
+  "smoke_scope": "DIST, 2 epochs, first 2 usable windows per split, batch=2, tiny model. No performance claims.",
+  "smoke": {
+    "FullExo": {
+      "test": {
+        "loss": 0.29477539588075313,
+        "mse_norm": 3.8646216821877424,
+        "mae_norm": 1.5418027768852007,
+        "rmse_norm": 1.9620709424988565,
+        "mse": 0.9946566941968134,
+        "mae": 0.807562101413869,
+        "rmse": 0.9970694214520909,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          359,
+          320,
+          344,
+          338,
+          371,
+          335,
+          410,
+          299,
+          378
+        ],
+        "target_ids": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "target_names": [
+          "FIC05.PV",
+          "FIC09.PV",
+          "FIC11.PV",
+          "LIC02.PV",
+          "LIC03.PV",
+          "LIC04.PV",
+          "LIC05.PV",
+          "LIC06.PV",
+          "LIC12.PV"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mae_input_scaled"
+      },
+      "parameter_count": 4321,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 508,
+          "first_start": 5.0,
+          "last_end": 18005.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 169,
+          "first_start": 4572005.0,
+          "last_end": 4590005.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 170,
+          "first_start": 6093005.0,
+          "last_end": 6111005.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        900.0,
+        1800.0,
+        2700.0000000000005,
+        3600.0,
+        4500.0,
+        5400.000000000001,
+        6300.000000000001
+      ],
+      "future_grid_seconds": [
+        7200.0,
+        8100.0,
+        9000.0
+      ]
+    },
+    "NoExo": {
+      "test": {
+        "loss": 0.4720548987369233,
+        "mse_norm": 10.959728197702246,
+        "mae_norm": 2.5564654958601887,
+        "rmse_norm": 3.309979238098757,
+        "mse": 2.6463958085622172,
+        "mae": 1.3310581537714006,
+        "rmse": 1.626417685846285,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          359,
+          320,
+          344,
+          338,
+          371,
+          335,
+          410,
+          299,
+          378
+        ],
+        "target_ids": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "target_names": [
+          "FIC05.PV",
+          "FIC09.PV",
+          "FIC11.PV",
+          "LIC02.PV",
+          "LIC03.PV",
+          "LIC04.PV",
+          "LIC05.PV",
+          "LIC06.PV",
+          "LIC12.PV"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mae_input_scaled"
+      },
+      "parameter_count": 4265,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 508,
+          "first_start": 5.0,
+          "last_end": 18005.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 169,
+          "first_start": 4572005.0,
+          "last_end": 4590005.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 170,
+          "first_start": 6093005.0,
+          "last_end": 6111005.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        900.0,
+        1800.0,
+        2700.0000000000005,
+        3600.0,
+        4500.0,
+        5400.000000000001,
+        6300.000000000001
+      ],
+      "future_grid_seconds": [
+        7200.0,
+        8100.0,
+        9000.0
+      ]
+    }
+  },
+  "folder_migration_validation": {
+    "command": "python -m pytest tests baseline/dag_irregular -q",
+    "passed": 159,
+    "warnings": 9,
+    "seconds": 57.0,
+    "entrypoint": "python -m baseline.dag_irregular.run --help"
+  }
+}

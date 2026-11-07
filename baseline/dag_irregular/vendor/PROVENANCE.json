@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/decisionintelligence/DAG",
+  "commit": "0758990e2c73bb54138ea3e7b11a35cbc5476bcc",
+  "changes": "Imports relocated to this package; one trailing blank line removed from CC_EncDec.py. Model computations unchanged.",
+  "sha256": {
+    "ts_benchmark/baselines/dag/layers/Embed.py": "531047e17c50357d0093b54bdae33dad0f923c1670629c7d7127ecc94a85ca00",
+    "ts_benchmark/baselines/dag/layers/CC_EncDec.py": "48710ae9b8abc79642d4adb9a728442281103145614772e524f6f8310cfb8339",
+    "ts_benchmark/baselines/dag/layers/SelfAttention_Family.py": "486f5493c3f7214ca7d32f88248cb83752235b94b93204c2a5a36ce46525a778",
+    "ts_benchmark/baselines/dag/layers/Transformer_EncDec.py": "c3bb0a411a6df5bdb86f33589ae851304907084974c0a155138f1902aae653d3",
+    "ts_benchmark/baselines/dag/layers/TC_EncDec.py": "094fc25f070794f7545a4e07019fea34ec228e7e6d9d341acf7e68469351c9ef",
+    "ts_benchmark/baselines/dag/models/dag_model.py": "d26c3d861f10faeb6a48ea7ffe9064ec385e3152e584eca8cc96862d408dec79",
+    "ts_benchmark/baselines/time_series_library/utils/masking.py": "c734bc424298367bc3fcf187b4a73476317ffc06411e9ae103d0a77a91d1b386"
+  }
+}

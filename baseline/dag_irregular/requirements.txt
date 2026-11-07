@@ -1,0 +1,3 @@
+-r ../../requirements-exen.txt
+einops>=0.8
+reformer-pytorch>=1.4
