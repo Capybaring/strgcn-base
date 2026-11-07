@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/mumiao2000/CrossLinear",
+  "commit": "d22366e2f59ced560a02b2b1c7cc673e3c02a13f",
+  "variant": "Unmodified official Model, MS for one target and M for multiple targets; external future-X MLP in adapter",
+  "import_replacements": {},
+  "files": {
+    "model.py": {
+      "source": "models/CrossLinear.py",
+      "sha256": "a062ac97231c55384c621f27981b8225bb87822f50704df201b381dd8e037593"
+    }
+  }
+}

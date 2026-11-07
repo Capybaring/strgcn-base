@@ -1,0 +1,869 @@
+{
+  "date": "2026-11-07",
+  "device": "CPU",
+  "scope": "13 datasets, FullExo, tiny model, 1 epoch, first 2 windows per split, batch=2; functional verification only",
+  "upstream": {
+    "repository": "https://github.com/mumiao2000/CrossLinear",
+    "commit": "d22366e2f59ced560a02b2b1c7cc673e3c02a13f",
+    "variant": "Unmodified official Model, MS for one target and M for multiple targets; external future-X MLP in adapter",
+    "import_replacements": {},
+    "files": {
+      "model.py": {
+        "source": "models/CrossLinear.py",
+        "sha256": "a062ac97231c55384c621f27981b8225bb87822f50704df201b381dd8e037593"
+      }
+    }
+  },
+  "datasets": {
+    "BE": {
+      "test": {
+        "loss": 0.07238141055005186,
+        "mse_norm": 1.078837783046205,
+        "mae_norm": 0.925740978415014,
+        "rmse_norm": 1.0322517655203487,
+        "mse": 268.46890673096163,
+        "mae": 14.603548979671277,
+        "rmse": 16.28375492563599,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          35
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "OT"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 752,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 114048000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 151372800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "Colbun": {
+      "test": {
+        "loss": 0.14527340810990344,
+        "mse_norm": 2.122053510802251,
+        "mae_norm": 1.3824684220712928,
+        "rmse_norm": 1.3852437326630636,
+        "mse": 91.58451232483942,
+        "mae": 9.082137509478473,
+        "rmse": 9.100369934916595,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          14
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Water_Level_daily_avg"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 752,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 25,
+          "first_start": 0.0,
+          "last_end": 12096000.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 8,
+          "first_start": 151200000.0,
+          "last_end": 163296000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 9,
+          "first_start": 199584000.0,
+          "last_end": 211680000.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        648000.0,
+        1296000.0,
+        1943999.9999999998,
+        2592000.0,
+        3240000.0,
+        3887999.9999999995,
+        4536000.0
+      ],
+      "future_grid_seconds": [
+        5184000.0,
+        5831999.999999999,
+        6480000.0
+      ]
+    },
+    "DE": {
+      "test": {
+        "loss": 0.2716132809671466,
+        "mse_norm": 40.4582134212807,
+        "mae_norm": 6.30315745827722,
+        "rmse_norm": 6.355164761145506,
+        "mse": 7917.459933135403,
+        "mae": 88.17546181394232,
+        "rmse": 88.9029968594276,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          35
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "OT"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 752,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 114048000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 151372800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "DIST": {
+      "test": {
+        "loss": 0.22007271412282783,
+        "mse_norm": 4.775974042071965,
+        "mae_norm": 2.03579871290495,
+        "rmse_norm": 2.1825547657935798,
+        "mse": 2.2591650620506325,
+        "mae": 1.2943491598818413,
+        "rmse": 1.5029783863781576,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          359,
+          320,
+          344,
+          338,
+          371,
+          335,
+          410,
+          299,
+          378
+        ],
+        "target_ids": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "target_names": [
+          "FIC05.PV",
+          "FIC09.PV",
+          "FIC11.PV",
+          "LIC02.PV",
+          "LIC03.PV",
+          "LIC04.PV",
+          "LIC05.PV",
+          "LIC06.PV",
+          "LIC12.PV"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 4644,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 508,
+          "first_start": 5.0,
+          "last_end": 18005.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 169,
+          "first_start": 4572005.0,
+          "last_end": 4590005.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 170,
+          "first_start": 6093005.0,
+          "last_end": 6111005.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        900.0,
+        1800.0,
+        2700.0000000000005,
+        3600.0,
+        4500.0,
+        5400.000000000001,
+        6300.000000000001
+      ],
+      "future_grid_seconds": [
+        7200.0,
+        8100.0,
+        9000.0
+      ]
+    },
+    "Energy": {
+      "test": {
+        "loss": 7.350538369814732,
+        "mse_norm": 99.4069254081545,
+        "mae_norm": 9.796160427657076,
+        "rmse_norm": 9.944535572586595,
+        "mse": 97655529.88106239,
+        "mae": 9709.480378341315,
+        "rmse": 9856.542645131005,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          33
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Thermoelectric"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 785,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 40,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 14,
+          "first_start": 27648000.0,
+          "last_end": 29030400.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 14,
+          "first_start": 37324800.0,
+          "last_end": 38707200.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "FR": {
+      "test": {
+        "loss": 0.0756669170682629,
+        "mse_norm": 1.1328294725245394,
+        "mae_norm": 0.9622751435213572,
+        "rmse_norm": 1.055725368403288,
+        "mse": 280.88030405506265,
+        "mae": 15.152267935053507,
+        "rmse": 16.623762710259236,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          35
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "OT"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 752,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 114048000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 151372800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "NP": {
+      "test": {
+        "loss": 0.06528819915278315,
+        "mse_norm": 3.296223763571268,
+        "mae_norm": 1.729507240347799,
+        "rmse_norm": 1.8073701763884815,
+        "mse": 132.8665377055066,
+        "mae": 10.98049328045651,
+        "rmse": 11.474838389887449,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          35
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "OT"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 752,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 114048000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 151372800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "PJM": {
+      "test": {
+        "loss": 0.036772045908301326,
+        "mse_norm": 1.9098057051700517,
+        "mae_norm": 1.0421080413633292,
+        "rmse_norm": 1.3664644283568583,
+        "mse": 52.65192581181289,
+        "mae": 5.471737875647608,
+        "rmse": 7.174817649985448,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          35
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "OT"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 752,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 114048000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 151372800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "Rapel": {
+      "test": {
+        "loss": 0.827968939477783,
+        "mse_norm": 6.377691924311149,
+        "mae_norm": 2.4423266520451685,
+        "rmse_norm": 2.488592013277152,
+        "mse": 11.23370801333516,
+        "mae": 3.2414068542353407,
+        "rmse": 3.3028093119636903,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          11
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Water_Level_daily_avg"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 752,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 28,
+          "first_start": 0.0,
+          "last_end": 12096000.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 10,
+          "first_start": 169344000.0,
+          "last_end": 181440000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 10,
+          "first_start": 229824000.0,
+          "last_end": 241920000.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        648000.0,
+        1296000.0,
+        1943999.9999999998,
+        2592000.0,
+        3240000.0,
+        3887999.9999999995,
+        4536000.0
+      ],
+      "future_grid_seconds": [
+        5184000.0,
+        5831999.999999999,
+        6480000.0
+      ]
+    },
+    "Sdwpfh1": {
+      "test": {
+        "loss": 0.19257712332323587,
+        "mse_norm": 1.365776696494311,
+        "mae_norm": 1.088476623242478,
+        "rmse_norm": 1.162955061479874,
+        "mse": 468875.64782755915,
+        "mae": 637.7612023210633,
+        "rmse": 681.3996758564709,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          30
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Patv"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 796,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 45,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 15,
+          "first_start": 31104000.0,
+          "last_end": 32486400.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 16,
+          "first_start": 41472000.0,
+          "last_end": 42854400.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "Sdwpfh2": {
+      "test": {
+        "loss": 0.19096220110387874,
+        "mse_norm": 2.3306434630799586,
+        "mae_norm": 1.412383291156584,
+        "rmse_norm": 1.5188149871266168,
+        "mse": 442848.9368920992,
+        "mae": 615.6621487655505,
+        "rmse": 662.0560469714786,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          30
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Patv"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 796,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 45,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 15,
+          "first_start": 31104000.0,
+          "last_end": 32486400.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 16,
+          "first_start": 41472000.0,
+          "last_end": 42854400.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "Sdwpfm1": {
+      "test": {
+        "loss": 0.3811984003541825,
+        "mse_norm": 2.4357985853824142,
+        "mae_norm": 1.3408616691126727,
+        "rmse_norm": 1.5027809451151874,
+        "mse": 889194.3177534628,
+        "mae": 810.1428963712021,
+        "rmse": 907.9738317023714,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          34
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Patv"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 796,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 91,
+          "first_start": 0.0,
+          "last_end": 691200.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 30,
+          "first_start": 31449600.0,
+          "last_end": 32140800.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 31,
+          "first_start": 41817600.0,
+          "last_end": 42508800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        37800.0,
+        75600.0,
+        113400.0,
+        151200.0,
+        189000.0,
+        226800.0,
+        264600.0
+      ],
+      "future_grid_seconds": [
+        302400.0,
+        340200.0,
+        378000.0
+      ]
+    },
+    "Sdwpfm2": {
+      "test": {
+        "loss": 0.36574438079278515,
+        "mse_norm": 4.148493413600487,
+        "mae_norm": 1.7625581800734333,
+        "rmse_norm": 1.9732797577349275,
+        "mse": 822622.0487850767,
+        "mae": 784.8712695462455,
+        "rmse": 878.7060796817465,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          34
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Patv"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_mse_input_scaled"
+      },
+      "parameter_count": 796,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 91,
+          "first_start": 0.0,
+          "last_end": 691200.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 30,
+          "first_start": 31449600.0,
+          "last_end": 32140800.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 31,
+          "first_start": 41817600.0,
+          "last_end": 42508800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        37800.0,
+        75600.0,
+        113400.0,
+        151200.0,
+        189000.0,
+        226800.0,
+        264600.0
+      ],
+      "future_grid_seconds": [
+        302400.0,
+        340200.0,
+        378000.0
+      ]
+    }
+  },
+  "regression_tests": {
+    "command": "python -m pytest tests baseline -q",
+    "passed": 177,
+    "warnings": 9,
+    "seconds": 28.99
+  },
+  "cuda_validation": "Not executed on this CPU-only machine; CUDA is selectable via --device cuda:0"
+}

@@ -1,0 +1,885 @@
+{
+  "date": "2026-11-07",
+  "device": "CPU",
+  "scope": "13 datasets, FullExo, tiny model, 1 epoch, first 2 windows per split, batch=2; functional verification only",
+  "upstream": {
+    "repository": "https://github.com/decisionintelligence/DAG",
+    "commit": "0758990e2c73bb54138ea3e7b11a35cbc5476bcc",
+    "original_method_repository": "https://github.com/thuml/TimeXer",
+    "variant": "DAG benchmark extension: explicit endogenous/exogenous split and future X embedding",
+    "import_replacements": {
+      "from ts_benchmark.baselines.timexer.layers.": "from .",
+      "from ts_benchmark.baselines.time_series_library.utils.masking": "from .masking"
+    },
+    "files": {
+      "model.py": {
+        "source": "ts_benchmark/baselines/timexer/model/timexer_model.py",
+        "sha256": "3eccd0e184467cbc9b0c5db4868acdc581d3d8bdb0442777a7e1ff4b07826a07"
+      },
+      "Embed.py": {
+        "source": "ts_benchmark/baselines/timexer/layers/Embed.py",
+        "sha256": "48b2dc4262a7d82334905c8f433a6222299f35baffe2bcdd671f78f26d27d233"
+      },
+      "SelfAttention_Family.py": {
+        "source": "ts_benchmark/baselines/timexer/layers/SelfAttention_Family.py",
+        "sha256": "062e4c761128407755d312b798b95647f566669c15cf0a6c1bb86c96bdb4999b"
+      },
+      "masking.py": {
+        "source": "ts_benchmark/baselines/time_series_library/utils/masking.py",
+        "sha256": "c734bc424298367bc3fcf187b4a73476317ffc06411e9ae103d0a77a91d1b386"
+      }
+    }
+  },
+  "datasets": {
+    "BE": {
+      "test": {
+        "loss": 0.24552045397414268,
+        "mse_norm": 12.059682172025203,
+        "mae_norm": 2.5936613144488705,
+        "rmse_norm": 2.947925324076386,
+        "mse": 3001.0532993242523,
+        "mae": 40.914965336289114,
+        "rmse": 46.50347436522706,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          35
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "OT"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1131,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 114048000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 151372800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "Colbun": {
+      "test": {
+        "loss": 0.012147879828153765,
+        "mse_norm": 0.3548956601697595,
+        "mae_norm": 0.565021980393585,
+        "rmse_norm": 0.5926608989489788,
+        "mse": 15.316741918803686,
+        "mae": 3.711916482058898,
+        "rmse": 3.8934905816374403,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          14
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Water_Level_daily_avg"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1131,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 25,
+          "first_start": 0.0,
+          "last_end": 12096000.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 8,
+          "first_start": 151200000.0,
+          "last_end": 163296000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 9,
+          "first_start": 199584000.0,
+          "last_end": 211680000.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        648000.0,
+        1296000.0,
+        1943999.9999999998,
+        2592000.0,
+        3240000.0,
+        3887999.9999999995,
+        4536000.0
+      ],
+      "future_grid_seconds": [
+        5184000.0,
+        5831999.999999999,
+        6480000.0
+      ]
+    },
+    "DE": {
+      "test": {
+        "loss": 0.0037161141797425958,
+        "mse_norm": 1.1233990693511045,
+        "mae_norm": 0.8541703447814042,
+        "rmse_norm": 1.0074308116109831,
+        "mse": 219.84329925528917,
+        "mae": 11.949069195466404,
+        "rmse": 14.093044263513029,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          35
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "OT"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1131,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 114048000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 151372800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "DIST": {
+      "test": {
+        "loss": 0.0048751810184172045,
+        "mse_norm": 0.2898994802656252,
+        "mae_norm": 0.30522482083617974,
+        "rmse_norm": 0.5138874936129243,
+        "mse": 0.04396881822217554,
+        "mae": 0.13943998761826795,
+        "rmse": 0.2078200845997624,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          359,
+          320,
+          344,
+          338,
+          371,
+          335,
+          410,
+          299,
+          378
+        ],
+        "target_ids": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "target_names": [
+          "FIC05.PV",
+          "FIC09.PV",
+          "FIC11.PV",
+          "LIC02.PV",
+          "LIC03.PV",
+          "LIC04.PV",
+          "LIC05.PV",
+          "LIC06.PV",
+          "LIC12.PV"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1195,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 508,
+          "first_start": 5.0,
+          "last_end": 18005.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 169,
+          "first_start": 4572005.0,
+          "last_end": 4590005.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 170,
+          "first_start": 6093005.0,
+          "last_end": 6111005.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        900.0,
+        1800.0,
+        2700.0000000000005,
+        3600.0,
+        4500.0,
+        5400.000000000001,
+        6300.000000000001
+      ],
+      "future_grid_seconds": [
+        7200.0,
+        8100.0,
+        9000.0
+      ]
+    },
+    "Energy": {
+      "test": {
+        "loss": 0.1440933532319199,
+        "mse_norm": 4.612684930860068,
+        "mae_norm": 1.7969015639015686,
+        "rmse_norm": 2.1466213014940942,
+        "mse": 4531416.591429757,
+        "mae": 1781.0019145108936,
+        "rmse": 2127.6272025662684,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          33
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Thermoelectric"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1131,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 40,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 14,
+          "first_start": 27648000.0,
+          "last_end": 29030400.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 14,
+          "first_start": 37324800.0,
+          "last_end": 38707200.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "FR": {
+      "test": {
+        "loss": 0.023890508915950168,
+        "mse_norm": 0.709153632071116,
+        "mae_norm": 0.7289731208029446,
+        "rmse_norm": 0.8418355366979996,
+        "mse": 175.8316610124851,
+        "mae": 11.478625545120082,
+        "rmse": 13.255790399634854,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          35
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "OT"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1131,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 114048000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 151372800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "NP": {
+      "test": {
+        "loss": 0.004421968710179368,
+        "mse_norm": 0.4381516944124034,
+        "mae_norm": 0.5451255320710313,
+        "rmse_norm": 0.6417636030204462,
+        "mse": 17.66133090530962,
+        "mae": 3.4609552953981986,
+        "rmse": 4.074502127664099,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          35
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "OT"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1131,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 114048000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 151372800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "PJM": {
+      "test": {
+        "loss": 0.020018513461584342,
+        "mse_norm": 2.048461389219539,
+        "mae_norm": 1.0789716830671006,
+        "rmse_norm": 1.4217474558531276,
+        "mse": 56.4745601092163,
+        "mae": 5.665295718537819,
+        "rmse": 7.465089122256276,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          35
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "OT"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1131,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 163,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 54,
+          "first_start": 112665600.0,
+          "last_end": 114048000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 55,
+          "first_start": 149990400.0,
+          "last_end": 151372800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "Rapel": {
+      "test": {
+        "loss": 0.012947223440337587,
+        "mse_norm": 0.22348702091787465,
+        "mae_norm": 0.40181757077759606,
+        "rmse_norm": 0.4051178592100407,
+        "mse": 0.39365149141046,
+        "mae": 0.5332842054440334,
+        "rmse": 0.5376642819325415,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          11
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Water_Level_daily_avg"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1131,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 28,
+          "first_start": 0.0,
+          "last_end": 12096000.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 10,
+          "first_start": 169344000.0,
+          "last_end": 181440000.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 10,
+          "first_start": 229824000.0,
+          "last_end": 241920000.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        648000.0,
+        1296000.0,
+        1943999.9999999998,
+        2592000.0,
+        3240000.0,
+        3887999.9999999995,
+        4536000.0
+      ],
+      "future_grid_seconds": [
+        5184000.0,
+        5831999.999999999,
+        6480000.0
+      ]
+    },
+    "Sdwpfh1": {
+      "test": {
+        "loss": 0.10156080049566664,
+        "mse_norm": 1.4970211226658199,
+        "mae_norm": 0.9182685937371978,
+        "rmse_norm": 1.0352217379957844,
+        "mse": 513932.2925212904,
+        "mae": 538.0327605483598,
+        "rmse": 606.5580520474027,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          30
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Patv"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1131,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 45,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 15,
+          "first_start": 31104000.0,
+          "last_end": 32486400.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 16,
+          "first_start": 41472000.0,
+          "last_end": 42854400.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "Sdwpfh2": {
+      "test": {
+        "loss": 0.07846061274785748,
+        "mse_norm": 1.8723490935230673,
+        "mae_norm": 1.0629312415565662,
+        "rmse_norm": 1.205575042904581,
+        "mse": 355767.7605745094,
+        "mae": 463.3349433289204,
+        "rmse": 525.5138078028057,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          30
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Patv"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1131,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 45,
+          "first_start": 0.0,
+          "last_end": 1382400.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 15,
+          "first_start": 31104000.0,
+          "last_end": 32486400.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 16,
+          "first_start": 41472000.0,
+          "last_end": 42854400.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        75600.0,
+        151200.0,
+        226800.0,
+        302400.0,
+        378000.0,
+        453600.0,
+        529200.0
+      ],
+      "future_grid_seconds": [
+        604800.0,
+        680400.0,
+        756000.0
+      ]
+    },
+    "Sdwpfm1": {
+      "test": {
+        "loss": 0.12645891192306422,
+        "mse_norm": 1.885712834679898,
+        "mae_norm": 1.2034060466690464,
+        "rmse_norm": 1.3239226772230308,
+        "mse": 688384.1494837278,
+        "mae": 727.0927960855564,
+        "rmse": 799.9084297836353,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          34
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Patv"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1131,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 91,
+          "first_start": 0.0,
+          "last_end": 691200.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 30,
+          "first_start": 31449600.0,
+          "last_end": 32140800.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 31,
+          "first_start": 41817600.0,
+          "last_end": 42508800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        37800.0,
+        75600.0,
+        113400.0,
+        151200.0,
+        189000.0,
+        226800.0,
+        264600.0
+      ],
+      "future_grid_seconds": [
+        302400.0,
+        340200.0,
+        378000.0
+      ]
+    },
+    "Sdwpfm2": {
+      "test": {
+        "loss": 0.08404686849828255,
+        "mse_norm": 2.0627883895430474,
+        "mae_norm": 1.2391538884429232,
+        "rmse_norm": 1.4295693988269755,
+        "mse": 409038.90690843144,
+        "mae": 551.7981174073036,
+        "rmse": 636.5905884111266,
+        "forecast_window_count": 2,
+        "observed_count_by_target": [
+          34
+        ],
+        "target_ids": [
+          0
+        ],
+        "target_names": [
+          "Patv"
+        ],
+        "primary_metric": "mse_norm",
+        "primary_space": "train_standardized",
+        "aggregation": "mean_of_forecast_window_metrics",
+        "prediction_space": "original_units",
+        "reference": "decisionintelligence/DAG@0758990",
+        "selection_metric": "query_huber_input_scaled"
+      },
+      "parameter_count": 1131,
+      "split": {
+        "train": {
+          "windows": 2,
+          "candidate_windows": 91,
+          "first_start": 0.0,
+          "last_end": 691200.0
+        },
+        "valid": {
+          "windows": 2,
+          "candidate_windows": 30,
+          "first_start": 31449600.0,
+          "last_end": 32140800.0
+        },
+        "test": {
+          "windows": 2,
+          "candidate_windows": 31,
+          "first_start": 41817600.0,
+          "last_end": 42508800.0
+        }
+      },
+      "history_grid_seconds": [
+        0.0,
+        37800.0,
+        75600.0,
+        113400.0,
+        151200.0,
+        189000.0,
+        226800.0,
+        264600.0
+      ],
+      "future_grid_seconds": [
+        302400.0,
+        340200.0,
+        378000.0
+      ]
+    }
+  },
+  "regression_tests": {
+    "command": "python -m pytest tests baseline -q",
+    "passed": 177,
+    "warnings": 9,
+    "seconds": 28.99
+  },
+  "cuda_validation": "Not executed on this CPU-only machine; CUDA is selectable via --device cuda:0"
+}

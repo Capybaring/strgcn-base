@@ -1,0 +1,28 @@
+{
+  "repository": "https://github.com/decisionintelligence/DAG",
+  "commit": "0758990e2c73bb54138ea3e7b11a35cbc5476bcc",
+  "original_method_repository": "https://github.com/thuml/TimeXer",
+  "variant": "DAG benchmark extension: explicit endogenous/exogenous split and future X embedding",
+  "import_replacements": {
+    "from ts_benchmark.baselines.timexer.layers.": "from .",
+    "from ts_benchmark.baselines.time_series_library.utils.masking": "from .masking"
+  },
+  "files": {
+    "model.py": {
+      "source": "ts_benchmark/baselines/timexer/model/timexer_model.py",
+      "sha256": "3eccd0e184467cbc9b0c5db4868acdc581d3d8bdb0442777a7e1ff4b07826a07"
+    },
+    "Embed.py": {
+      "source": "ts_benchmark/baselines/timexer/layers/Embed.py",
+      "sha256": "48b2dc4262a7d82334905c8f433a6222299f35baffe2bcdd671f78f26d27d233"
+    },
+    "SelfAttention_Family.py": {
+      "source": "ts_benchmark/baselines/timexer/layers/SelfAttention_Family.py",
+      "sha256": "062e4c761128407755d312b798b95647f566669c15cf0a6c1bb86c96bdb4999b"
+    },
+    "masking.py": {
+      "source": "ts_benchmark/baselines/time_series_library/utils/masking.py",
+      "sha256": "c734bc424298367bc3fcf187b4a73476317ffc06411e9ae103d0a77a91d1b386"
+    }
+  }
+}

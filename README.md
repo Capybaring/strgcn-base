@@ -165,4 +165,4 @@ Set `ATTENTION_DTYPE=auto` for BF16/FP16 CUDA attention; the default is FP32.
 
 ## 对比实验基线
 
-独立对比方法统一放在 [`baseline/`](baseline/README.md) 目录。首个方法为 [DAG 不规则时序预测](baseline/dag_irregular/README.md)，提供 FullExo 和 Y-only NoExo 两种模式。
+独立对比方法统一放在 [`baseline/`](baseline/README.md) 目录。已包含 [DAG](baseline/dag_irregular/README.md)、[TimeXer](baseline/timexer_irregular/README.md) 和 [CrossLinear](baseline/crosslinear_irregular/README.md)，提供 FullExo 和 Y-only NoExo 两种模式。TimeXer 与 CrossLinear 的全数据集有外生实验可运行 `bash baseline/run_full_exo.sh`。
