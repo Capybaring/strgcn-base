@@ -1,0 +1,52 @@
+global_config:
+  task_name: prediction
+  tpatch_data_root: ./data/tpatch-data
+data_config:
+  data_processor_name: TPatchRecordProcessor
+  scaler_name: TPatchInputScaler
+  scaler_params: {}
+  dataset_name: TPatchFusionDataset
+  dataset_params:
+    known_future_exogenous_var_ids: all
+    patch_size: 300
+  dataloader_params:
+    shuffle: true
+    num_workers: 0
+    pin_memory: false
+    drop_last: false
+  data_processor_params:
+    dataset: activity
+    split_seed: 42
+model_config:
+  model_name: TPatchGNNFusion
+  model_params:
+    hid_dim: 32
+    n_layer: 1
+    n_heads: 1
+    fusion_hidden: 64
+train_config:
+  batch_size: 32
+  load_checkpoint: false
+  metrics:
+  - mse
+  - mae
+  - rmse
+  random_seed: 3407
+  device: cpu
+  optimizer_name: Adam
+  optimizer_params:
+    lr: 0.001
+    weight_decay: 0.0
+  scheduler_name: StepLR
+  scheduler_params:
+    step_size: 1000000
+    gamma: 1.0
+  trainer_name: TPatchForecastTrainer
+  trainer_params:
+    max_epoch_num: 30
+    enable_early_stop: true
+    early_stop_patience: 5
+    eval_metric_key: mse
+    eval_metric_min_is_best: true
+    enable_autocast: false
+    do_inverse_scaling: false

@@ -188,3 +188,17 @@ spaces rather than DAG StandardScaler scores. ExEnGraphTransformer batches legal
 attention groups on the CPU-built relation plan; its 4+3 layers stay unchanged.
 The runner writes separate `tpatch_v2` directories. See the guide above before
 comparing new and old metrics.
+
+## Original patch backbones with DAG-style future-X fusion
+
+The new `TPatchGNNFusion` and `HiPatchFusion` baselines retain their published
+historical backbones and add the same two-layer, 64-hidden MLP Fusion used by DAG.
+They use the current tpatch record splits, role indices and variable-macro metrics.
+See [setup, modes, source versions and comparison scope](baseline/patch_fusion/README.md).
+
+```bash
+pip install -r baseline/patch_fusion/requirements.txt
+DEVICE=cuda:0 bash scripts/run_patch_fusion.sh
+BACKBONE=tpatchgnn DEVICE=cuda:0 bash scripts/run_patch_fusion.sh activity
+BACKBONE=hipatch MODE=NoExo DEVICE=cuda:0 bash scripts/run_patch_fusion.sh activity
+```

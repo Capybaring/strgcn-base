@@ -1,0 +1,4 @@
+-r ../../requirements-exen.txt
+einops>=0.8
+# Optional original Hi-Patch graph backend: torch-geometric and torch-scatter.
+# A gather/message/index_add implementation is bundled when these are absent.

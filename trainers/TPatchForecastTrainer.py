@@ -22,6 +22,7 @@ class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
     def _predict(self, b):
         args = {k: b[k] for k in ('batch_timestamp', 'batch_var_idx', 'batch_pred_mask',
                                   'batch_pad_mask', 'batch_time_id', 'batch_node_type') if k in b}
+        args.update({k: v for k, v in b.items() if k.startswith('batch_backbone_')})
         if 'batch_attention_plan' in b:
             args['batch_attention_plan'] = b['batch_attention_plan']
         return self.model(batch_value=torch.where(b['batch_pred_mask'].bool(), 0, b['batch_value']),

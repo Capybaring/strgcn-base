@@ -7,6 +7,9 @@ from .STRGCN.ExEnGraphTransformer import ExEnGraphTransformer
 
 
 def __getattr__(name):
+    if name in ('TPatchGNNFusion', 'HiPatchFusion'):
+        from baseline.patch_fusion import adapter
+        return getattr(adapter, name)
     if name == 'STRGCNCLS':
         from .STRGCNCLS.STRGCNCLS import STRGCNCLS
         return STRGCNCLS
@@ -17,6 +20,8 @@ def __getattr__(name):
     raise AttributeError(name)
 
 __all__ = [
+    "TPatchGNNFusion",
+    "HiPatchFusion",
     "STRGCN",
     "ExEn",
     "STRGCNDirect",

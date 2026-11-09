@@ -1,0 +1,36 @@
+{
+  "backbones": [
+    {
+      "name": "tpatchgnn",
+      "repository": "https://github.com/usail-hkust/t-PatchGNN",
+      "commit": "00c94e7bbaf21c71b03ed84ff690ae59e37129e5",
+      "path": "tPatchGNN/model/tPatchGNN.py",
+      "original_sha256": "ba9db3896a025103369e27b710794fe7cdce6d03b508c02b5bce5ae12aa6a26c",
+      "adapted_sha256": "99be332db6b714c9ba5238383c5fcaf7b939e2b8d5bc06aedbf8bb618278c5e0",
+      "changes": [
+        "Remove imports unused by forecasting class (no copied external model modules required)",
+        "Replace two hard-coded CUDA constructor calls with configured device",
+        "Remove upstream trailing whitespace"
+      ]
+    },
+    {
+      "name": "hipatch",
+      "repository": "https://github.com/easonLuo2001/Hi-Patch",
+      "commit": "ae3cb7c672e045db4b11085251a60b0c33b8d0db",
+      "path": "Hi-Patch/model/hipatch.py",
+      "original_sha256": "075e8c8d2d61e4034f6db35622d70caaac5b261feceda39088aae98b6fce61f0",
+      "adapted_sha256": "fcb0272b09939e1540583746afc2bee5da68f82a737046e11392031c89d7d506",
+      "changes": [
+        "Prefer original PyG/scatter backend when installed; sum-aggregation compatibility fallback otherwise",
+        "Return empty messages for an empty graph softmax",
+        "Preserve B,N,H dimensions when B=1 (original unconstrained squeeze removes them)",
+        "Remove upstream trailing whitespace"
+      ]
+    }
+  ],
+  "fusion_reference": "https://github.com/decisionintelligence/DAG/blob/master/ts_benchmark/baselines/utils.py",
+  "fusion": "Linear(DY+DX,64)->ReLU->Linear(64,DY); no residual; all parameters jointly optimized",
+  "fusion_reference_commit": "0758990e2c73bb54138ea3e7b11a35cbc5476bcc",
+  "fusion_reference_path": "ts_benchmark/baselines/utils.py::MLP",
+  "fusion_direct_output_and_gradient_comparison": "passed against reference class"
+}

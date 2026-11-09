@@ -19,3 +19,12 @@ DEVICE=cuda:0 BATCH_SIZE=16 EPOCHS=100 bash baseline/run_full_exo.sh
 ```
 
 默认结果目录自动附加时间，DAG 已有入口保持原样。
+
+四个tpatch数据集另提供 [t-PatchGNN / Hi-Patch + DAG MLP Fusion](patch_fusion/README.md)。
+它们复用TPatchForecastTrainer及当前变量索引，支持FullExo、HistExo、NoExo；
+不使用上面processed数据的DAG评价协议。
+
+```bash
+DEVICE=cuda:0 bash scripts/run_patch_fusion.sh
+BACKBONE=hipatch DEVICE=cuda:0 bash scripts/run_patch_fusion.sh activity
+```

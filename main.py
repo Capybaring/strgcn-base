@@ -68,9 +68,16 @@ def main(args):
             raise ValueError('--attention-dtype requires ExEnGraphTransformer')
         model_config['model_params']['attention_dtype']=args.attention_dtype
     if getattr(args, 'no_exogenous', False):
-        if data_config['dataset_name'] not in ('ExEnProcessedDataset', 'TPatchRecordDataset'):
-            raise ValueError('--no-exogenous requires ExEnProcessedDataset or TPatchRecordDataset')
+        if data_config['dataset_name'] not in ('ExEnProcessedDataset', 'TPatchRecordDataset', 'TPatchFusionDataset'):
+            raise ValueError('--no-exogenous requires a role-aware processed or tpatch dataset')
         data_config['dataset_params'] = dict(data_config.get('dataset_params', {}), use_exogenous=False)
+
+    if getattr(args, 'history_only_exogenous', False):
+        if getattr(args, 'no_exogenous', False):
+            raise ValueError('Choose either --no-exogenous or --history-only-exogenous')
+        if data_config['dataset_name'] not in ('ExEnProcessedDataset', 'TPatchRecordDataset', 'TPatchFusionDataset'):
+            raise ValueError('History-only X requires a role-aware dataset')
+        data_config['dataset_params'] = dict(data_config.get('dataset_params', {}), known_future_exogenous_var_ids=[])
 
     if getattr(args, 'tpatch_data_root', None) is not None:
         global_args['tpatch_data_root'] = args.tpatch_data_root
@@ -334,7 +341,7 @@ def main(args):
         # save y_pred, y_true to self.result_save_dir/y_pred.npy, y_true.npy
         np.save(os.path.join(result_save_dir_path, "test_y_pred.npy"), y_pred)
         np.save(os.path.join(result_save_dir_path, "test_y_true.npy"), y_true)
-        if model_config["model_name"] in ("ExEn", "STRGCNDirect", "ExEnAligned", "ExEnGraphTransformer"):
+        if model_config["model_name"] in ("ExEn", "STRGCNDirect", "ExEnAligned", "ExEnGraphTransformer", "TPatchGNNFusion", "HiPatchFusion"):
             np.save(os.path.join(result_save_dir_path, "test_y_mask.npy"), trainer.last_eval_mask)
             np.save(os.path.join(result_save_dir_path, "test_var_idx.npy"), trainer.last_eval_var_idx)
         if evaluation_scaler is not None:
@@ -425,6 +432,10 @@ def main(args):
                 baseline_exogenous_var_ids=packet['baseline_ids'],
                 input_scaler_unseen_variable_ids=getattr(scaler, 'unseen_variable_ids', []),
                 batch_size=batch_size, model_name=model_config['model_name'],
+                model_parameters=model_config['model_params'],
+                fusion=(dict(module='DAG two-layer pointwise MLP, no residual',
+                             future_fill=global_args['fusion_future_fill'],
+                             fusion_inputs=global_args['fusion_inputs']) if 'fusion_inputs' in global_args else None),
                 target_ids=packet['target_ids'],
                 checkpoint_attention=model_config['model_params'].get('checkpoint_attention'),
                 packed_attention=data_config['dataset_params'].get('pack_attention', False))
@@ -479,6 +490,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--device", default=None, help="Override configured device, e.g. cpu or cuda:0")
     parser.add_argument("--tpatch-data-root", default=None, help="Root containing activity/mimic/physionet/ushcn processed folders")
+    parser.add_argument("--history-only-exogenous", action="store_true", help="Keep historical X but remove true future X")
     parser.add_argument("--no-exogenous", action="store_true", help="Remove ALL historical and future exogenous input nodes")
     parser.add_argument('--attention-dtype',choices=['float32','auto','bfloat16','float16'],default=None,
                         help='Graph Transformer attention precision; auto selects BF16/FP16 on CUDA and FP32 on CPU')
