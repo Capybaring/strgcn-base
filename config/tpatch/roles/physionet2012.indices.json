@@ -1,0 +1,302 @@
+{
+  "index_base": 0,
+  "label_encoding": {
+    "endogenous": 0,
+    "exogenous": 1
+  },
+  "exogenous_indices": [
+    0,
+    1,
+    2,
+    3,
+    14,
+    24
+  ],
+  "endogenous_indices": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40
+  ],
+  "labels": [
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "variables": [
+    {
+      "index": 0,
+      "variable": "Age",
+      "role": "exogenous"
+    },
+    {
+      "index": 1,
+      "variable": "Gender",
+      "role": "exogenous"
+    },
+    {
+      "index": 2,
+      "variable": "Height",
+      "role": "exogenous"
+    },
+    {
+      "index": 3,
+      "variable": "ICUType",
+      "role": "exogenous"
+    },
+    {
+      "index": 4,
+      "variable": "Weight",
+      "role": "endogenous"
+    },
+    {
+      "index": 5,
+      "variable": "Albumin",
+      "role": "endogenous"
+    },
+    {
+      "index": 6,
+      "variable": "ALP",
+      "role": "endogenous"
+    },
+    {
+      "index": 7,
+      "variable": "ALT",
+      "role": "endogenous"
+    },
+    {
+      "index": 8,
+      "variable": "AST",
+      "role": "endogenous"
+    },
+    {
+      "index": 9,
+      "variable": "Bilirubin",
+      "role": "endogenous"
+    },
+    {
+      "index": 10,
+      "variable": "BUN",
+      "role": "endogenous"
+    },
+    {
+      "index": 11,
+      "variable": "Cholesterol",
+      "role": "endogenous"
+    },
+    {
+      "index": 12,
+      "variable": "Creatinine",
+      "role": "endogenous"
+    },
+    {
+      "index": 13,
+      "variable": "DiasABP",
+      "role": "endogenous"
+    },
+    {
+      "index": 14,
+      "variable": "FiO2",
+      "role": "exogenous"
+    },
+    {
+      "index": 15,
+      "variable": "GCS",
+      "role": "endogenous"
+    },
+    {
+      "index": 16,
+      "variable": "Glucose",
+      "role": "endogenous"
+    },
+    {
+      "index": 17,
+      "variable": "HCO3",
+      "role": "endogenous"
+    },
+    {
+      "index": 18,
+      "variable": "HCT",
+      "role": "endogenous"
+    },
+    {
+      "index": 19,
+      "variable": "HR",
+      "role": "endogenous"
+    },
+    {
+      "index": 20,
+      "variable": "K",
+      "role": "endogenous"
+    },
+    {
+      "index": 21,
+      "variable": "Lactate",
+      "role": "endogenous"
+    },
+    {
+      "index": 22,
+      "variable": "Mg",
+      "role": "endogenous"
+    },
+    {
+      "index": 23,
+      "variable": "MAP",
+      "role": "endogenous"
+    },
+    {
+      "index": 24,
+      "variable": "MechVent",
+      "role": "exogenous"
+    },
+    {
+      "index": 25,
+      "variable": "Na",
+      "role": "endogenous"
+    },
+    {
+      "index": 26,
+      "variable": "NIDiasABP",
+      "role": "endogenous"
+    },
+    {
+      "index": 27,
+      "variable": "NIMAP",
+      "role": "endogenous"
+    },
+    {
+      "index": 28,
+      "variable": "NISysABP",
+      "role": "endogenous"
+    },
+    {
+      "index": 29,
+      "variable": "PaCO2",
+      "role": "endogenous"
+    },
+    {
+      "index": 30,
+      "variable": "PaO2",
+      "role": "endogenous"
+    },
+    {
+      "index": 31,
+      "variable": "pH",
+      "role": "endogenous"
+    },
+    {
+      "index": 32,
+      "variable": "Platelets",
+      "role": "endogenous"
+    },
+    {
+      "index": 33,
+      "variable": "RespRate",
+      "role": "endogenous"
+    },
+    {
+      "index": 34,
+      "variable": "SaO2",
+      "role": "endogenous"
+    },
+    {
+      "index": 35,
+      "variable": "SysABP",
+      "role": "endogenous"
+    },
+    {
+      "index": 36,
+      "variable": "Temp",
+      "role": "endogenous"
+    },
+    {
+      "index": 37,
+      "variable": "TroponinI",
+      "role": "endogenous"
+    },
+    {
+      "index": 38,
+      "variable": "TroponinT",
+      "role": "endogenous"
+    },
+    {
+      "index": 39,
+      "variable": "Urine",
+      "role": "endogenous"
+    },
+    {
+      "index": 40,
+      "variable": "WBC",
+      "role": "endogenous"
+    }
+  ]
+}

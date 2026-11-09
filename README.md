@@ -166,3 +166,17 @@ Set `ATTENTION_DTYPE=auto` for BF16/FP16 CUDA attention; the default is FP32.
 ## 对比实验基线
 
 独立对比方法统一放在 [`baseline/`](baseline/README.md) 目录。已包含 [DAG](baseline/dag_irregular/README.md)、[TimeXer](baseline/timexer_irregular/README.md) 和 [CrossLinear](baseline/crosslinear_irregular/README.md)，提供 FullExo 和 Y-only NoExo 两种模式。TimeXer 与 CrossLinear 的全数据集有外生实验可运行 `bash baseline/run_full_exo.sh`。
+
+## t-PatchGNN record-based supplementary experiments
+
+Put the four processed datasets under `data/tpatch-data/{mimic,physionet,activity,ushcn}/processed/`.
+The new adapter splits source records before constructing record-local tasks, pads
+ragged observations per batch, and uses the supplied oracle future-X role indices.
+Clinical tasks are 24h→24h, Activity 3s→1s, and USHCN 24 months→1 month.
+See [task definitions, roles and run guide (中文)](docs/TPATCH_ORACLE_zh.md).
+
+```bash
+DEVICE=cuda:0 bash scripts/run_tpatch_oracle.sh
+NO_EXOGENOUS=1 DEVICE=cuda:0 bash scripts/run_tpatch_oracle.sh
+# Also supports MODEL=ExEn, ExEnAligned, or STRGCNDirect.
+```

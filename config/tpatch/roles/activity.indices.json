@@ -1,0 +1,99 @@
+{
+  "index_base": 0,
+  "label_encoding": {
+    "endogenous": 0,
+    "exogenous": 1
+  },
+  "exogenous_indices": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "endogenous_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "labels": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "variables": [
+    {
+      "index": 0,
+      "variable": "ANKLE_LEFT_x",
+      "role": "endogenous"
+    },
+    {
+      "index": 1,
+      "variable": "ANKLE_LEFT_y",
+      "role": "endogenous"
+    },
+    {
+      "index": 2,
+      "variable": "ANKLE_LEFT_z",
+      "role": "endogenous"
+    },
+    {
+      "index": 3,
+      "variable": "ANKLE_RIGHT_x",
+      "role": "endogenous"
+    },
+    {
+      "index": 4,
+      "variable": "ANKLE_RIGHT_y",
+      "role": "endogenous"
+    },
+    {
+      "index": 5,
+      "variable": "ANKLE_RIGHT_z",
+      "role": "endogenous"
+    },
+    {
+      "index": 6,
+      "variable": "CHEST_x",
+      "role": "exogenous"
+    },
+    {
+      "index": 7,
+      "variable": "CHEST_y",
+      "role": "exogenous"
+    },
+    {
+      "index": 8,
+      "variable": "CHEST_z",
+      "role": "exogenous"
+    },
+    {
+      "index": 9,
+      "variable": "BELT_x",
+      "role": "exogenous"
+    },
+    {
+      "index": 10,
+      "variable": "BELT_y",
+      "role": "exogenous"
+    },
+    {
+      "index": 11,
+      "variable": "BELT_z",
+      "role": "exogenous"
+    }
+  ]
+}

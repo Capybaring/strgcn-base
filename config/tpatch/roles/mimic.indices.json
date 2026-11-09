@@ -1,0 +1,687 @@
+{
+  "index_base": 0,
+  "label_encoding": {
+    "endogenous": 0,
+    "exogenous": 1
+  },
+  "exogenous_indices": [
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    73,
+    74,
+    77,
+    78,
+    79,
+    82,
+    85,
+    87,
+    88,
+    89,
+    90
+  ],
+  "endogenous_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    72,
+    75,
+    76,
+    80,
+    81,
+    83,
+    84,
+    86,
+    91,
+    92,
+    93,
+    94,
+    95
+  ],
+  "labels": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "variables": [
+    {
+      "index": 0,
+      "variable": "Anion Gap",
+      "role": "endogenous"
+    },
+    {
+      "index": 1,
+      "variable": "Bicarbonate",
+      "role": "endogenous"
+    },
+    {
+      "index": 2,
+      "variable": "Calcium, Total",
+      "role": "endogenous"
+    },
+    {
+      "index": 3,
+      "variable": "Chloride",
+      "role": "endogenous"
+    },
+    {
+      "index": 4,
+      "variable": "Creatinine",
+      "role": "endogenous"
+    },
+    {
+      "index": 5,
+      "variable": "Glucose",
+      "role": "endogenous"
+    },
+    {
+      "index": 6,
+      "variable": "Magnesium",
+      "role": "endogenous"
+    },
+    {
+      "index": 7,
+      "variable": "Phosphate",
+      "role": "endogenous"
+    },
+    {
+      "index": 8,
+      "variable": "Potassium",
+      "role": "endogenous"
+    },
+    {
+      "index": 9,
+      "variable": "Sodium",
+      "role": "endogenous"
+    },
+    {
+      "index": 10,
+      "variable": "Alkaline Phosphatase",
+      "role": "endogenous"
+    },
+    {
+      "index": 11,
+      "variable": "Asparate Aminotransferase (AST)",
+      "role": "endogenous"
+    },
+    {
+      "index": 12,
+      "variable": "Bilirubin, Total",
+      "role": "endogenous"
+    },
+    {
+      "index": 13,
+      "variable": "Urea Nitrogen",
+      "role": "endogenous"
+    },
+    {
+      "index": 14,
+      "variable": "Basophils",
+      "role": "endogenous"
+    },
+    {
+      "index": 15,
+      "variable": "Eosinophils",
+      "role": "endogenous"
+    },
+    {
+      "index": 16,
+      "variable": "Hematocrit",
+      "role": "endogenous"
+    },
+    {
+      "index": 17,
+      "variable": "Hemoglobin",
+      "role": "endogenous"
+    },
+    {
+      "index": 18,
+      "variable": "Lymphocytes",
+      "role": "endogenous"
+    },
+    {
+      "index": 19,
+      "variable": "MCH",
+      "role": "endogenous"
+    },
+    {
+      "index": 20,
+      "variable": "MCHC",
+      "role": "endogenous"
+    },
+    {
+      "index": 21,
+      "variable": "MCV",
+      "role": "endogenous"
+    },
+    {
+      "index": 22,
+      "variable": "Monocytes",
+      "role": "endogenous"
+    },
+    {
+      "index": 23,
+      "variable": "Neutrophils",
+      "role": "endogenous"
+    },
+    {
+      "index": 24,
+      "variable": "Platelet Count",
+      "role": "endogenous"
+    },
+    {
+      "index": 25,
+      "variable": "RDW",
+      "role": "endogenous"
+    },
+    {
+      "index": 26,
+      "variable": "Red Blood Cells",
+      "role": "endogenous"
+    },
+    {
+      "index": 27,
+      "variable": "White Blood Cells",
+      "role": "endogenous"
+    },
+    {
+      "index": 28,
+      "variable": "PTT",
+      "role": "endogenous"
+    },
+    {
+      "index": 29,
+      "variable": "Lactate",
+      "role": "endogenous"
+    },
+    {
+      "index": 30,
+      "variable": "PT",
+      "role": "endogenous"
+    },
+    {
+      "index": 31,
+      "variable": "Alanine Aminotransferase (ALT)",
+      "role": "endogenous"
+    },
+    {
+      "index": 32,
+      "variable": "pH",
+      "role": "endogenous"
+    },
+    {
+      "index": 33,
+      "variable": "Specific Gravity",
+      "role": "endogenous"
+    },
+    {
+      "index": 34,
+      "variable": "Sodium Chloride 0.9%  Flush Drug",
+      "role": "exogenous"
+    },
+    {
+      "index": 35,
+      "variable": "Magnesium Sulfate Drug",
+      "role": "exogenous"
+    },
+    {
+      "index": 36,
+      "variable": "Potassium Chloride",
+      "role": "exogenous"
+    },
+    {
+      "index": 37,
+      "variable": "Calcium Gluconate",
+      "role": "exogenous"
+    },
+    {
+      "index": 38,
+      "variable": "Insulin - Regular",
+      "role": "exogenous"
+    },
+    {
+      "index": 39,
+      "variable": "OR Crystalloid Intake",
+      "role": "exogenous"
+    },
+    {
+      "index": 40,
+      "variable": "Morphine Sulfate",
+      "role": "exogenous"
+    },
+    {
+      "index": 41,
+      "variable": "OR Cell Saver Intake",
+      "role": "exogenous"
+    },
+    {
+      "index": 42,
+      "variable": "Dextrose 5%",
+      "role": "exogenous"
+    },
+    {
+      "index": 43,
+      "variable": "LR",
+      "role": "exogenous"
+    },
+    {
+      "index": 44,
+      "variable": "Piggyback",
+      "role": "exogenous"
+    },
+    {
+      "index": 45,
+      "variable": "Solution",
+      "role": "exogenous"
+    },
+    {
+      "index": 46,
+      "variable": "KCL (Bolus)",
+      "role": "exogenous"
+    },
+    {
+      "index": 47,
+      "variable": "Nitroglycerin",
+      "role": "exogenous"
+    },
+    {
+      "index": 48,
+      "variable": "Base Excess",
+      "role": "endogenous"
+    },
+    {
+      "index": 49,
+      "variable": "Calculated Total CO2",
+      "role": "endogenous"
+    },
+    {
+      "index": 50,
+      "variable": "pCO2",
+      "role": "endogenous"
+    },
+    {
+      "index": 51,
+      "variable": "pO2",
+      "role": "endogenous"
+    },
+    {
+      "index": 52,
+      "variable": "Albumin",
+      "role": "endogenous"
+    },
+    {
+      "index": 53,
+      "variable": "Foley",
+      "role": "endogenous"
+    },
+    {
+      "index": 54,
+      "variable": "Chest Tube #1",
+      "role": "endogenous"
+    },
+    {
+      "index": 55,
+      "variable": "Aspirin Drug",
+      "role": "exogenous"
+    },
+    {
+      "index": 56,
+      "variable": "Potassium Chloride Drug",
+      "role": "exogenous"
+    },
+    {
+      "index": 57,
+      "variable": "Docusate Sodium Drug",
+      "role": "exogenous"
+    },
+    {
+      "index": 58,
+      "variable": "Packed Red Blood Cells",
+      "role": "exogenous"
+    },
+    {
+      "index": 59,
+      "variable": "Phenylephrine",
+      "role": "exogenous"
+    },
+    {
+      "index": 60,
+      "variable": "Magnesium Sulfate",
+      "role": "exogenous"
+    },
+    {
+      "index": 61,
+      "variable": "Metoprolol",
+      "role": "exogenous"
+    },
+    {
+      "index": 62,
+      "variable": "Magnesium Sulfate (Bolus)",
+      "role": "exogenous"
+    },
+    {
+      "index": 63,
+      "variable": "Metoprolol Tartrate Drug",
+      "role": "exogenous"
+    },
+    {
+      "index": 64,
+      "variable": "Bisacodyl Drug",
+      "role": "exogenous"
+    },
+    {
+      "index": 65,
+      "variable": "Gastric Meds",
+      "role": "exogenous"
+    },
+    {
+      "index": 66,
+      "variable": "Furosemide (Lasix)",
+      "role": "exogenous"
+    },
+    {
+      "index": 67,
+      "variable": "Midazolam (Versed)",
+      "role": "exogenous"
+    },
+    {
+      "index": 68,
+      "variable": "Insulin - Glargine",
+      "role": "exogenous"
+    },
+    {
+      "index": 69,
+      "variable": "D5W Drug",
+      "role": "exogenous"
+    },
+    {
+      "index": 70,
+      "variable": "PO Intake",
+      "role": "exogenous"
+    },
+    {
+      "index": 71,
+      "variable": "Sterile Water",
+      "role": "exogenous"
+    },
+    {
+      "index": 72,
+      "variable": "Jackson Pratt #1",
+      "role": "endogenous"
+    },
+    {
+      "index": 73,
+      "variable": "GT Flush",
+      "role": "exogenous"
+    },
+    {
+      "index": 74,
+      "variable": "Insulin - Humalog",
+      "role": "exogenous"
+    },
+    {
+      "index": 75,
+      "variable": "TF Residual",
+      "role": "endogenous"
+    },
+    {
+      "index": 76,
+      "variable": "Pre-Admission",
+      "role": "endogenous"
+    },
+    {
+      "index": 77,
+      "variable": "Humulin-R Insulin Drug",
+      "role": "exogenous"
+    },
+    {
+      "index": 78,
+      "variable": "Pantoprazole Drug",
+      "role": "exogenous"
+    },
+    {
+      "index": 79,
+      "variable": "Lorazepam (Ativan)",
+      "role": "exogenous"
+    },
+    {
+      "index": 80,
+      "variable": "Stool Out Stool",
+      "role": "endogenous"
+    },
+    {
+      "index": 81,
+      "variable": "Ultrafiltrate Ultrafiltrate",
+      "role": "endogenous"
+    },
+    {
+      "index": 82,
+      "variable": "Hydralazine",
+      "role": "exogenous"
+    },
+    {
+      "index": 83,
+      "variable": "OR EBL",
+      "role": "endogenous"
+    },
+    {
+      "index": 84,
+      "variable": "Chest Tube #2",
+      "role": "endogenous"
+    },
+    {
+      "index": 85,
+      "variable": "Heparin Sodium",
+      "role": "exogenous"
+    },
+    {
+      "index": 86,
+      "variable": "Void",
+      "role": "endogenous"
+    },
+    {
+      "index": 87,
+      "variable": "K Phos",
+      "role": "exogenous"
+    },
+    {
+      "index": 88,
+      "variable": "Norepinephrine",
+      "role": "exogenous"
+    },
+    {
+      "index": 89,
+      "variable": "D5 1/2NS",
+      "role": "exogenous"
+    },
+    {
+      "index": 90,
+      "variable": "Albumin 5%",
+      "role": "exogenous"
+    },
+    {
+      "index": 91,
+      "variable": "Ostomy (output)",
+      "role": "endogenous"
+    },
+    {
+      "index": 92,
+      "variable": "Condom Cath",
+      "role": "endogenous"
+    },
+    {
+      "index": 93,
+      "variable": "Gastric Gastric Tube",
+      "role": "endogenous"
+    },
+    {
+      "index": 94,
+      "variable": "Fecal Bag",
+      "role": "endogenous"
+    },
+    {
+      "index": 95,
+      "variable": "Urine Out Incontinent",
+      "role": "endogenous"
+    }
+  ]
+}

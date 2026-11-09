@@ -1,3 +1,4 @@
+from .TPatchRecordDataset import TPatchRecordDataset
 from .ExEnProcessedDataset import ExEnProcessedDataset
 from .abs import AbstractDataset
 
@@ -11,6 +12,7 @@ def __getattr__(name):
         return ITSClassificationDataset
     raise AttributeError(name)
 __all__ = [
+    "TPatchRecordDataset",
     "ExEnProcessedDataset",
     "AbstractDataset",
     "ITSPredictionDataset",

@@ -1,3 +1,4 @@
+from .TPatchRecordProcessor import TPatchRecordProcessor
 from .ExEnProcessedProcessor import ExEnProcessedProcessor
 from data_processors.ActivityProcessor import ActivityProcessor
 from data_processors.ExEnNPZProcessor import ExEnNPZProcessor
@@ -10,6 +11,7 @@ from data_processors.PhysionetCLSProcessor import PhysionetCLSProcessor
 from data_processors.MIMIC3CLSProcessor import MIMIC3CLSProcessor
 
 __all__ = [
+    "TPatchRecordProcessor",
     "ExEnProcessedProcessor",
     "ExEnNPZProcessor",
     "ActivityProcessor",

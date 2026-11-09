@@ -5,6 +5,7 @@ regression_metrics.py and rolling_forecast.py. Statistics use training data only
 """
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from .packet_observations import raw_observations
 
 REFERENCE = 'decisionintelligence/DAG@0758990'
 METRICS = ('mse_norm', 'mae_norm', 'rmse_norm', 'mse', 'mae', 'rmse')
@@ -18,10 +19,16 @@ class DAGEvaluationScaler:
         self.scale_ = np.empty(dim, dtype=np.float64)
         self.count_ = np.zeros(dim, dtype=np.int64)
         self.names = list(packet['names'])
+        self.fit_scope = 'training_records_only' if packet.get('kind') == 'tpatch_records' else 'training_windows_only'
+        self.zero_rule = ('original_mask & finite; observed zero retained; invalid PhysioNet negatives masked'
+                          if packet.get('kind') == 'tpatch_records' else
+                          'raw zero is missing; standardized zero remains valid')
         for j in range(dim):
-            pieces = [packet['values'][a:b, j][packet['mask'][a:b, j]]
-                      for a, _, b, _ in packet['windows']]
+            pieces = [values[:, j][mask[:, j]] for values, mask in raw_observations(packet)]
             observed = np.concatenate(pieces).astype(np.float64)
+            if not len(observed) and packet.get('kind') == 'tpatch_records':
+                self.mean_[j], self.scale_[j] = 0., 1.
+                continue
             if not len(observed) or not np.isfinite(observed).all():
                 raise ValueError(f'Invalid or empty evaluation-scaler training data: {self.names[j]}')
             fitted = StandardScaler().fit(observed[:, None])
@@ -30,19 +37,22 @@ class DAGEvaluationScaler:
         return self
 
     def save(self, path):
-        np.savez(path, mean=self.mean_, scale=self.scale_, count=self.count_, names=self.names)
+        np.savez(path, mean=self.mean_, scale=self.scale_, count=self.count_, names=self.names,
+                 fit_scope=self.fit_scope, zero_rule=self.zero_rule)
 
     def load(self, path):
         with np.load(path, allow_pickle=False) as data:
             self.mean_, self.scale_, self.count_ = data['mean'], data['scale'], data['count']
             self.names = data['names'].tolist()
+            self.fit_scope = str(data['fit_scope']) if 'fit_scope' in data else 'training_windows_only'
+            self.zero_rule = str(data['zero_rule']) if 'zero_rule' in data else 'raw zero is missing; standardized zero remains valid'
         return self
 
     def manifest(self):
-        return dict(type='StandardScaler', fit_scope='training_windows_only', ddof=0,
+        return dict(type='StandardScaler', fit_scope=getattr(self, 'fit_scope', 'training_windows_only'), ddof=0,
                     mean=self.mean_.tolist(), scale=self.scale_.tolist(),
                     observed_count=self.count_.tolist(), variable_names=self.names,
-                    zero_rule='raw zero is missing; standardized zero remains valid')
+                    zero_rule=getattr(self, 'zero_rule', 'raw zero is missing; standardized zero remains valid'))
 
 
 def window_metrics(actual, predicted, mask, var_idx, scaler):

@@ -1,6 +1,7 @@
 import torch
 from abc import ABC, abstractmethod
 import numpy as np
+from .packet_observations import raw_observations
 
 
 class Scaler(ABC):
@@ -522,10 +523,14 @@ class ExEnProcessedMinMaxScaler(Scaler):
         p = self._packet(data)
         count = len(p['names'])
         minimum, maximum = np.full(count, np.inf), np.full(count, -np.inf)
-        for a, _, b, _ in p['windows']:
-            x, mask = p['values'][a:b], p['mask'][a:b]
+        for x, mask in raw_observations(p):
             minimum = np.minimum(minimum, np.where(mask, x, np.inf).min(0))
             maximum = np.maximum(maximum, np.where(mask, x, -np.inf).max(0))
+        if p.get('kind') == 'tpatch_records':
+            # No validation/test fallback for variables absent from training.
+            unseen = ~np.isfinite(minimum)
+            minimum[unseen], maximum[unseen] = 0., 1.
+            self.unseen_variable_ids = np.flatnonzero(unseen).tolist()
         if not np.isfinite(minimum).all() or not np.isfinite(maximum).all():
             missing = [p['names'][i] for i in np.where(~np.isfinite(minimum))[0]]
             raise ValueError(f'Variables with no nonzero training observations: {missing}')
@@ -538,12 +543,14 @@ class ExEnProcessedMinMaxScaler(Scaler):
         return p
 
     def save(self, path):
-        np.savez(path, minimum=self.minimum, ranges=self.ranges)
+        np.savez(path, minimum=self.minimum, ranges=self.ranges,
+                 unseen_variable_ids=getattr(self, 'unseen_variable_ids', []))
 
     def load(self, path):
         with np.load(path, allow_pickle=False) as data:
             self.minimum = data['minimum']
             self.ranges = data['ranges']
+            self.unseen_variable_ids = data['unseen_variable_ids'].tolist() if 'unseen_variable_ids' in data else []
 
     def inverse_transform(self, data):
         raise NotImplementedError('Use inverse_transform_mx with variable indices')

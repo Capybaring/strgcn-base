@@ -1,0 +1,50 @@
+{
+  "index_base": 0,
+  "label_encoding": {
+    "endogenous": 0,
+    "exogenous": 1
+  },
+  "exogenous_indices": [
+    0,
+    1,
+    2
+  ],
+  "endogenous_indices": [
+    3,
+    4
+  ],
+  "labels": [
+    1,
+    1,
+    1,
+    0,
+    0
+  ],
+  "variables": [
+    {
+      "index": 0,
+      "variable": "SNOW",
+      "role": "exogenous"
+    },
+    {
+      "index": 1,
+      "variable": "SNWD",
+      "role": "exogenous"
+    },
+    {
+      "index": 2,
+      "variable": "PRCP",
+      "role": "exogenous"
+    },
+    {
+      "index": 3,
+      "variable": "TMAX",
+      "role": "endogenous"
+    },
+    {
+      "index": 4,
+      "variable": "TMIN",
+      "role": "endogenous"
+    }
+  ]
+}

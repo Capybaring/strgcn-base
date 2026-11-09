@@ -68,9 +68,12 @@ def main(args):
             raise ValueError('--attention-dtype requires ExEnGraphTransformer')
         model_config['model_params']['attention_dtype']=args.attention_dtype
     if getattr(args, 'no_exogenous', False):
-        if data_config['dataset_name'] != 'ExEnProcessedDataset':
-            raise ValueError('--no-exogenous requires ExEnProcessedDataset')
+        if data_config['dataset_name'] not in ('ExEnProcessedDataset', 'TPatchRecordDataset'):
+            raise ValueError('--no-exogenous requires ExEnProcessedDataset or TPatchRecordDataset')
         data_config['dataset_params'] = dict(data_config.get('dataset_params', {}), use_exogenous=False)
+
+    if getattr(args, 'tpatch_data_root', None) is not None:
+        global_args['tpatch_data_root'] = args.tpatch_data_root
 
     task_name = global_args.get("task_name")
 
@@ -97,6 +100,10 @@ def main(args):
         **data_config.get("data_processor_params", {})
     )
     processed_data = data_processor.process()
+    if global_args.get('tpatch_protocol') is not None:
+        split_ids = {split: np.asarray([r[0] for r in processed_data[f'{split}_data']['records']])
+                     for split in ('train', 'valid', 'test')}
+        np.savez(os.path.join(model_save_dir_path, 'record_splits.npz'), **split_ids)
     evaluation_scaler = None
     if train_config['trainer_name'] == 'ExEnDAGForecastTrainer':
         from utils.dag_evaluation import DAGEvaluationScaler
@@ -331,8 +338,16 @@ def main(args):
             np.save(os.path.join(result_save_dir_path, "test_var_idx.npy"), trainer.last_eval_var_idx)
         if evaluation_scaler is not None:
             np.save(os.path.join(result_save_dir_path, "test_window_id.npy"), trainer.last_eval_window_id)
-            np.save(os.path.join(result_save_dir_path, "test_window_start_seconds.npy"),
-                    np.asarray([w[3] for w in test_dataset.packet['windows']]))
+            packet = test_dataset.packet
+            is_record = packet.get('kind') == 'tpatch_records'
+            if is_record:
+                np.save(os.path.join(result_save_dir_path, 'test_window_start_native.npy'),
+                        np.asarray([w[4] for w in packet['windows']]))
+                np.save(os.path.join(result_save_dir_path, 'test_record_id.npy'),
+                        np.asarray([packet['records'][w[0]][0] for w in packet['windows']]))
+            else:
+                np.save(os.path.join(result_save_dir_path, 'test_window_start_seconds.npy'),
+                        np.asarray([w[3] for w in packet['windows']]))
             relation_scopes = dict(STRGCNDirect='all_known_variables_to_all_receivers_causal',
                                    ExEn='role_constrained_exen', ExEnAligned='role_constrained_exen_staged_aligned',
                                    ExEnGraphTransformer='role_constrained_exen_staged_attention')
@@ -352,8 +367,14 @@ def main(args):
                                  "Y_history_X_history_and_known_future" if train_dataset.known_future_exogenous_var_ids else
                                  "Y_history_and_X_history"),
                 known_future_exogenous_var_ids=sorted(train_dataset.known_future_exogenous_var_ids),
-                missingness='original_mask & finite(raw_value) & (raw_value != 0)',
+                missingness=('original_mask & finite(raw_value); observed zeros retained; invalid PhysioNet negatives masked'
+                             if is_record else 'original_mask & finite(raw_value) & (raw_value != 0)'),
                 irregular_extension='mean over valid target cells within each window; equal weight per window')
+            if is_record:
+                protocol.update(tpatch=global_args['tpatch_protocol'],
+                                native_time_unit=packet['time_unit'],
+                                baseline_exogenous_var_ids=packet['baseline_ids'],
+                                input_scaler_unseen_variable_ids=getattr(scaler, 'unseen_variable_ids', []))
             if model_config['model_name'] in ('STRGCNDirect','ExEnAligned'):
                 params = model_config['model_params']
                 cheb = params.get('gcn_type','cheb') == 'cheb'
@@ -424,6 +445,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--device", default=None, help="Override configured device, e.g. cpu or cuda:0")
+    parser.add_argument("--tpatch-data-root", default=None, help="Root containing activity/mimic/physionet/ushcn processed folders")
     parser.add_argument("--no-exogenous", action="store_true", help="Remove ALL historical and future exogenous input nodes")
     parser.add_argument('--attention-dtype',choices=['float32','auto','bfloat16','float16'],default=None,
                         help='Graph Transformer attention precision; auto selects BF16/FP16 on CUDA and FP32 on CPU')
