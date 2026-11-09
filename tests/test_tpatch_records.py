@@ -174,7 +174,10 @@ def test_cli_one_epoch_exports_record_protocol(tmp_path, dataset):
     assert (tmp_path / 'result/test_record_id.npy').exists()
     assert not (tmp_path / 'result/test_window_start_seconds.npy').exists()
     metrics = json.loads((tmp_path / 'result/metrics.json').read_text())
-    assert np.isfinite(metrics['test']['mse_norm'])
+    assert np.isfinite(metrics['test']['mse'])
+    assert 'mse_norm' not in metrics['test']
+    assert report['aggregation'] == 'global_mean_per_variable_then_equal_mean_available_variables'
+    assert not (tmp_path / 'model/evaluation_scaler.npz').exists()
 
 
 def test_activity_reversals_and_duplicate_timestamps_preserve_observations(tmp_path):

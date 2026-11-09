@@ -147,8 +147,9 @@ def main(args):
             seen_data = processed_data["seen_data"]
         else:
             seen_data = train_data
-        # Observation-graph baselines fit statistics on the training split only.
-        scaler.fit(train_data if model_config['model_name'] in ('ExEn', 'STRGCNDirect', 'ExEnAligned', 'ExEnGraphTransformer') else seen_data)
+        # t-PatchGNN uses seen records; existing DAG protocols retain train-only fitting.
+        scaler.fit(seen_data if scaler_name == 'TPatchInputScaler' else (
+            train_data if model_config['model_name'] in ('ExEn', 'STRGCNDirect', 'ExEnAligned', 'ExEnGraphTransformer') else seen_data))
         # save scaler
         scaler.save(os.path.join(model_save_dir_path, "scaler"))
 
@@ -219,7 +220,7 @@ def main(args):
         )
 
     eval_dataloader_params = dict(data_config['dataloader_params'])
-    if evaluation_scaler is not None:
+    if evaluation_scaler is not None or train_config['trainer_name'] == 'TPatchForecastTrainer':
         eval_dataloader_params['shuffle'] = False
     valid_dataloader = DataLoader(
         valid_dataset,
@@ -401,6 +402,38 @@ def main(args):
                 training_history=trainer.evaluation_history[:-1], protocol=protocol)
             with open(os.path.join(result_save_dir_path, 'metrics.json'), 'w') as f:
                 json.dump(standard_results, f, indent=2, ensure_ascii=False, allow_nan=False)
+
+
+        if train_config['trainer_name'] == 'TPatchForecastTrainer':
+            packet = test_dataset.packet
+            np.save(os.path.join(result_save_dir_path, 'test_window_id.npy'), trainer.last_eval_window_id)
+            np.save(os.path.join(result_save_dir_path, 'test_window_start_native.npy'),
+                    np.asarray([w[4] for w in packet['windows']]))
+            np.save(os.path.join(result_save_dir_path, 'test_record_id.npy'),
+                    np.asarray([packet['records'][w[0]][0] for w in packet['windows']]))
+            protocol = dict(reference='usail-hkust/t-PatchGNN/lib/evaluation.py',
+                primary_metric='mse', primary_space='tpatch_input_space',
+                aggregation='global_mean_per_variable_then_equal_mean_available_variables',
+                prediction_space='model_input_space', model_input_scaler=scaler_name,
+                normalization=('identity_on_preprocessed_file' if packet['dataset'] == 'ushcn' else
+                               'MinMax_on_seen_records_train_plus_validation_no_test'),
+                tpatch=global_args['tpatch_protocol'], native_time_unit=packet['time_unit'],
+                missingness='original_mask & finite(raw_value); observed zeros retained; invalid PhysioNet negatives masked',
+                split=global_args['exen_processed_summary'],
+                use_exogenous=train_dataset.use_exogenous,
+                known_future_exogenous_var_ids=sorted(train_dataset.known_future_exogenous_var_ids),
+                baseline_exogenous_var_ids=packet['baseline_ids'],
+                input_scaler_unseen_variable_ids=getattr(scaler, 'unseen_variable_ids', []),
+                batch_size=batch_size, model_name=model_config['model_name'],
+                target_ids=packet['target_ids'],
+                checkpoint_attention=model_config['model_params'].get('checkpoint_attention'),
+                packed_attention=data_config['dataset_params'].get('pack_attention', False))
+            with open(os.path.join(result_save_dir_path, 'evaluation_protocol.json'), 'w') as f:
+                json.dump(protocol, f, indent=2, ensure_ascii=False, allow_nan=False)
+            with open(os.path.join(result_save_dir_path, 'metrics.json'), 'w') as f:
+                json.dump(dict(best_validation=best_eval_result, test=test_result,
+                    training_history=trainer.evaluation_history[:-1], protocol=protocol),
+                    f, indent=2, ensure_ascii=False, allow_nan=False)
 
 
         # save results

@@ -5,6 +5,20 @@ from .ExEnProcessedDataset import ExEnProcessedDataset
 
 
 class TPatchRecordDataset(ExEnProcessedDataset):
+    def __init__(self, *args, pack_attention=False, attention_score_budget=1048576, **kwargs):
+        self.pack_attention = pack_attention
+        self.attention_score_budget = attention_score_budget
+        super().__init__(*args, **kwargs)
+
+    def long_collate_fn(self, batch):
+        out = super().long_collate_fn(batch)
+        if self.pack_attention:
+            from models.STRGCN.PackedAttention import pack_attention_plan
+            out['batch_attention_plan'] = pack_attention_plan(out['batch_timestamp'],
+                out['batch_var_idx'], out['batch_node_type'], out['batch_pad_mask'].bool(),
+                max_score_elements=self.attention_score_budget)
+        return out
+
     def __len__(self):
         return len(self.packet['windows'])
 

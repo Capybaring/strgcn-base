@@ -557,3 +557,21 @@ class ExEnProcessedMinMaxScaler(Scaler):
 
     def inverse_transform_mx(self, data, var_idx=None):
         return data * self.ranges[var_idx] + self.minimum[var_idx]
+
+
+class TPatchInputScaler(ExEnProcessedMinMaxScaler):
+    """Upstream clinical/Activity MinMax on seen records; USHCN stays as supplied."""
+    def fit(self, data):
+        p = self._packet(data)
+        self.dataset = p['dataset']
+        if self.dataset == 'ushcn':
+            self.minimum = np.zeros(len(p['names']))
+            self.ranges = np.ones(len(p['names']))
+            self.unseen_variable_ids = []
+            return
+        super().fit(p)
+        # Upstream normalize_masked_data uses 1e-8 for constant columns.
+        maximum = np.full(len(p['names']), -np.inf)
+        for x, mask in raw_observations(p):
+            maximum = np.maximum(maximum, np.where(mask, x, -np.inf).max(0))
+        self.ranges = np.where(maximum == self.minimum, 1e-8, self.ranges)

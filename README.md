@@ -180,3 +180,11 @@ DEVICE=cuda:0 bash scripts/run_tpatch_oracle.sh
 NO_EXOGENOUS=1 DEVICE=cuda:0 bash scripts/run_tpatch_oracle.sh
 # Also supports MODEL=ExEn, ExEnAligned, or STRGCNDirect.
 ```
+
+The tpatch configs now use the official batch sizes (32; USHCN 192) and
+`TPatchForecastTrainer`: per-variable masked MSE/MAE over the full evaluation
+set, followed by an equal-variable mean. Scores use upstream MinMax/preprocessed
+spaces rather than DAG StandardScaler scores. ExEnGraphTransformer batches legal
+attention groups on the CPU-built relation plan; its 4+3 layers stay unchanged.
+The runner writes separate `tpatch_v2` directories. See the guide above before
+comparing new and old metrics.

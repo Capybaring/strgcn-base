@@ -1,3 +1,4 @@
+from .TPatchForecastTrainer import TPatchForecastTrainer
 from .ExEnDAGForecastTrainer import ExEnDAGForecastTrainer
 from .abs import AbstractTrainer
 from .IrrMaskingForecastTrainer import IrrMaskingForecastTrainer
@@ -6,6 +7,7 @@ from .IrrMaskingForecastCustomLossTrainer import IrrMaskingForecastCustomLossTra
 from .IrrFCGraphClassificationTrainer import IrrFCGraphClassificationTrainer
 
 __all__ = [
+    "TPatchForecastTrainer",
     "ExEnDAGForecastTrainer",
     "AbstractTrainer",
     "IrrMaskingForecastTrainer",

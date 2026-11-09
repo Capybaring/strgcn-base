@@ -3,7 +3,7 @@ global_config:
   tpatch_data_root: ./data/tpatch-data
 data_config:
   data_processor_name: TPatchRecordProcessor
-  scaler_name: ExEnProcessedMinMaxScaler
+  scaler_name: TPatchInputScaler
   scaler_params: {}
   dataset_name: TPatchRecordDataset
   dataset_params:
@@ -32,12 +32,9 @@ model_config:
     gcn_depth: 1
     receiver_chunk_size: 128
 train_config:
-  batch_size: 4
+  batch_size: 192
   load_checkpoint: false
   metrics:
-  - mse_norm
-  - mae_norm
-  - rmse_norm
   - mse
   - mae
   - rmse
@@ -51,12 +48,12 @@ train_config:
   scheduler_params:
     step_size: 10
     gamma: 0.5
-  trainer_name: ExEnDAGForecastTrainer
+  trainer_name: TPatchForecastTrainer
   trainer_params:
     max_epoch_num: 30
     enable_early_stop: true
     early_stop_patience: 5
-    eval_metric_key: mse_norm
+    eval_metric_key: mse
     eval_metric_min_is_best: true
     enable_autocast: false
     do_inverse_scaling: false

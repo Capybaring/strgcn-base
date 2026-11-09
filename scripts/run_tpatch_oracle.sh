@@ -8,7 +8,7 @@ no_exogenous="${NO_EXOGENOUS:-0}"
 case "$no_exogenous" in 0|1) ;; *) echo 'NO_EXOGENOUS must be 0 or 1' >&2; exit 2;; esac
 mode=oracle_x
 [[ "$no_exogenous" == 0 ]] || mode=y_only
-tag="${RUN_TAG:-${model}_tpatch_${mode}}"
+tag="${RUN_TAG:-${model}_tpatch_v2_${mode}}"
 if (( $# == 0 )); then set -- mimic physionet activity ushcn; fi
 for dataset in "$@"; do
   case "$dataset" in mimic|physionet|activity|ushcn) ;; *) echo "Unknown dataset: $dataset" >&2; exit 2;; esac

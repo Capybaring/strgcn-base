@@ -165,7 +165,7 @@ class ExEn(nn.Module):
 
     def forward(self, batch_value, batch_timestamp, batch_var_idx,
                 batch_pred_mask=None, batch_pad_mask=None, batch_time_id=None,
-                batch_agg_mask=None, batch_node_type=None):
+                batch_agg_mask=None, batch_node_type=None, batch_attention_plan=None):
         if batch_node_type is None:
             raise ValueError('batch_node_type is required; never infer roles from target values')
         if batch_value.ndim != 2 or batch_value.shape[1] == 0:
@@ -208,7 +208,8 @@ class ExEn(nn.Module):
         status = torch.where(types == FUTURE_EXO, 1, torch.where(query, 2, 0))
         h0 = h0 + self.role_embedding((~exo).long()) + self.status_embedding(status)
         h0 = torch.where(valid.unsqueeze(-1), h0, 0)
-        sparse_plan = build_sparse_relations(tt, var_idx, types, valid) if self.relation_backend == "sparse_csr" else None
+        sparse_plan = batch_attention_plan if batch_attention_plan is not None else (
+            build_sparse_relations(tt, var_idx, types, valid) if self.relation_backend == "sparse_csr" else None)
         masks = relation_masks(tt, var_idx, types, valid) if sparse_plan is None and self.receiver_chunk_size is None else None
         h = h0
         for layer in self.temporal_layers:

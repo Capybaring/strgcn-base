@@ -140,13 +140,14 @@ class TPatchRecordProcessor:
                 raise ValueError(f'No usable {split} tasks with historical observations and future targets')
             result[f'{split}_data'] = dict(kind='tpatch_records', records=subset, windows=windows,
                 names=[v['variable'] for v in variables], target_ids=targets, exogenous_ids=exo,
+                dataset=self.dataset,
                 baseline_ids=[0, 1, 2, 3] if self.dataset == 'physionet' else [],
                 history_native=history, forecast_native=forecast, duration_native=history + forecast,
                 time_unit=unit, time_scale=48. if self.dataset == 'ushcn' else history + forecast,
                 preserve_record_time=self.dataset == 'ushcn', zero_as_missing=False)
             summary[split] = dict(source_records=len(subset), tasks=len(windows),
                                   skipped_empty_tasks=rejected)
-        result['seen_data'] = result['train_data']
+        result['seen_data'] = dict(result['train_data'], records=train + valid)
         self.global_args.update(dataset_name=self.dataset,
             exen_variable_names=[v['variable'] for v in variables], exen_processed_summary=summary,
             exen_zero_as_missing=False, tpatch_protocol=dict(split_seed=self.seed,
@@ -154,7 +155,7 @@ class TPatchRecordProcessor:
                 history=history, forecast=forecast, time_unit=unit,
                 source_files=[str(p) for p in paths], roles_file=str(self.roles_path),
                 condition='oracle_true_future_X_plus_valid_baseline',
-                excluded_target_ids=excluded, normalization_fit='train_records_only',
+                excluded_target_ids=excluded, normalization_fit='seen_records_train_plus_valid_no_test',
                 record_time_order='stable sort; duplicate-time observations retained',
                 unit_of_split='source_record (not subject-grouped for Activity, matching t-PatchGNN)'))
         return result
