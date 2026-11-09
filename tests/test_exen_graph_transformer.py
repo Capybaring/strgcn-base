@@ -153,6 +153,11 @@ def test_configs_match_aligned_tasks_and_training():
     paths=list((ROOT/'config/ExEnGraphTransformer/processed').glob('*.yaml'));assert len(paths)==13
     for path in paths:
         c=yaml.safe_load(path.read_text());old=yaml.safe_load((ROOT/'config/ExEnAligned/processed'/path.name).read_text())
+        if path.stem == 'DIST':
+            # DIST now shares the t-PatchGNN variable-macro evaluation protocol.
+            old['train_config']['trainer_name'] = 'TPatchForecastTrainer'
+            old['train_config']['metrics'] = ['mse', 'mae', 'rmse']
+            old['train_config']['trainer_params']['eval_metric_key'] = 'mse'
         assert c['data_config']==old['data_config'] and c['train_config']==old['train_config']
         assert c['global_config']==old['global_config']
         p=c['model_config']['model_params'];assert p['n_layer']==4 and p['n_cross_layer']==3

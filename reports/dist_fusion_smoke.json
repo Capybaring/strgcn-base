@@ -1,0 +1,115 @@
+{
+  "scope": "Single actual full-size first DIST training window per model, separate sequential CPU processes; forward/backward/Adam update with default model configs and train-only MinMax. Synthetic CLI checks cover all three input modes. Not full-epoch training, CUDA validation, peak GPU memory or an accuracy/efficiency comparison.",
+  "runs": [
+    {
+      "model": "ExEnGraphTransformer",
+      "device": "cpu",
+      "torch_version": "2.15.0",
+      "threads": 1,
+      "window": "first actual training window, default full history/forecast and model dimensions",
+      "model_parameters": 84346,
+      "loss": 0.09297477453947067,
+      "forward_backward_step_seconds": 8.390830707969144,
+      "peak_process_rss_bytes": 1351434240,
+      "gradient_finite": true,
+      "split": {
+        "train": {
+          "windows": 377,
+          "candidate_windows": 508,
+          "first_start": 5.0,
+          "last_end": 4572005.0
+        },
+        "valid": {
+          "windows": 169,
+          "candidate_windows": 169,
+          "first_start": 4572005.0,
+          "last_end": 6093005.0
+        },
+        "test": {
+          "windows": 170,
+          "candidate_windows": 170,
+          "first_start": 6093005.0,
+          "last_end": 7623005.0
+        }
+      },
+      "mse": 0.09297477341092361,
+      "mae": 0.24451221400488984,
+      "rmse": 0.30491765021219025
+    },
+    {
+      "model": "TPatchGNNFusion",
+      "device": "cpu",
+      "torch_version": "2.15.0",
+      "threads": 1,
+      "window": "first actual training window, default full history/forecast and model dimensions",
+      "model_parameters": 280195,
+      "loss": 0.3539586365222931,
+      "forward_backward_step_seconds": 0.09106279187835753,
+      "peak_process_rss_bytes": 866254848,
+      "gradient_finite": true,
+      "split": {
+        "train": {
+          "windows": 377,
+          "candidate_windows": 508,
+          "first_start": 5.0,
+          "last_end": 4572005.0
+        },
+        "valid": {
+          "windows": 169,
+          "candidate_windows": 169,
+          "first_start": 4572005.0,
+          "last_end": 6093005.0
+        },
+        "test": {
+          "windows": 170,
+          "candidate_windows": 170,
+          "first_start": 6093005.0,
+          "last_end": 7623005.0
+        }
+      },
+      "mse": 0.3539586625464628,
+      "mae": 0.5731005945502216,
+      "rmse": 0.5949442516290605
+    },
+    {
+      "model": "HiPatchFusion",
+      "device": "cpu",
+      "torch_version": "2.15.0",
+      "threads": 1,
+      "window": "first actual training window, default full history/forecast and model dimensions",
+      "model_parameters": 84842,
+      "loss": 0.23526079952716827,
+      "forward_backward_step_seconds": 2.579893667018041,
+      "peak_process_rss_bytes": 3344957440,
+      "gradient_finite": true,
+      "split": {
+        "train": {
+          "windows": 377,
+          "candidate_windows": 508,
+          "first_start": 5.0,
+          "last_end": 4572005.0
+        },
+        "valid": {
+          "windows": 169,
+          "candidate_windows": 169,
+          "first_start": 4572005.0,
+          "last_end": 6093005.0
+        },
+        "test": {
+          "windows": 170,
+          "candidate_windows": 170,
+          "first_start": 6093005.0,
+          "last_end": 7623005.0
+        }
+      },
+      "mse": 0.2352608373391861,
+      "mae": 0.46712139527119184,
+      "rmse": 0.48503694430340677
+    }
+  ],
+  "tests": {
+    "related_and_graph_regression": "118 passed",
+    "other_model_processor_and_evaluation_regression": "126 passed",
+    "total_unique_passed": 244
+  }
+}

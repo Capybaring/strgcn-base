@@ -13,10 +13,14 @@ case "$mode" in FullExo|HistExo|NoExo) ;; *) echo 'MODE must be FullExo, HistExo
 if (( $# == 0 )); then set -- mimic physionet activity ushcn; fi
 for model in "${models[@]}"; do
   for dataset in "$@"; do
-    case "$dataset" in mimic|physionet|activity|ushcn) ;; *) echo "Unknown dataset: $dataset" >&2; exit 2;; esac
+    case "$dataset" in
+      mimic|physionet|activity|ushcn) config_group=tpatch;;
+      DIST|dist) dataset=DIST; config_group=processed;;
+      *) echo "Unknown dataset: $dataset" >&2; exit 2;;
+    esac
     tag="${RUN_TAG:-${model}_dag_mlp_${mode}}"
     command=("${PYTHON:-python}" -u main.py
-      --config_path "config/${model}/tpatch/${dataset}.yaml"
+      --config_path "config/${model}/${config_group}/${dataset}.yaml"
       --model_save_dir_path "model_states/${tag}/${model}/${dataset}"
       --result_save_dir_path "results/${tag}/${model}/${dataset}")
     [[ -z "${DEVICE:-}" ]] || command+=(--device "$DEVICE")

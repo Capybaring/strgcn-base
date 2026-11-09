@@ -202,3 +202,7 @@ DEVICE=cuda:0 bash scripts/run_patch_fusion.sh
 BACKBONE=tpatchgnn DEVICE=cuda:0 bash scripts/run_patch_fusion.sh activity
 BACKBONE=hipatch MODE=NoExo DEVICE=cuda:0 bash scripts/run_patch_fusion.sh activity
 ```
+
+## DIST with variable-macro evaluation
+
+ExEnGraphTransformer, TPatchGNNFusion and HiPatchFusion now support DIST with train-only MinMax and global variable-macro MSE/MAE/RMSE. Run all three with `DEVICE=cuda:0 bash scripts/run_dist.sh`. See [DIST instructions](docs/DIST_FORECAST_zh.md) for individual models and FullExo/HistExo/NoExo modes. Other processed datasets retain their existing evaluation configs.

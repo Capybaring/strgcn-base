@@ -77,7 +77,8 @@ class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
         summary.update(loss=summary['mse'], forecast_window_count=windows,
             target_ids=target_ids, target_names=[data_loader.dataset.packet['names'][i] for i in target_ids],
             observed_count_by_target=count[target_ids].long().cpu().tolist(),
-            primary_metric='mse', primary_space='tpatch_input_space',
+            primary_metric='mse', primary_space=('tpatch_input_space'
+                if data_loader.dataset.packet.get('kind') == 'tpatch_records' else 'train_minmax_input_space'),
             aggregation='global_mean_per_variable_then_equal_mean_available_variables',
             prediction_space='model_input_space', reference='usail-hkust/t-PatchGNN/lib/evaluation.py')
         self.last_eval_summary = summary

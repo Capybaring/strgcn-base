@@ -146,7 +146,8 @@ python -u main.py --config_path config/ExEnGraphTransformer/processed/NP.yaml --
 无外生单次命令增加 `--no-exogenous`，并更换两个输出路径；自动精度增加 `--attention-dtype auto`。
 需要 DIST 时增加 `INCLUDE_DIST=1`。新 DIST.yaml 仍沿用仓库原窗口；若采用 15 分钟→3 分钟任务，
 应先把其 `history_len` 改为 `900`、`forecast_len` 改为 `180`（秒）。
-新模型必须重新训练，不加载旧 GCN checkpoint。主要比较 test `mse_norm`、`mae_norm`。
+新模型必须重新训练，不加载旧 GCN checkpoint。非 DIST processed 配置主要比较 test `mse_norm`、`mae_norm`。
+DIST 已改为变量宏平均 MinMax 空间 `mse`、`mae`、`rmse`，三个模型与独立命令见 [DIST 说明](DIST_FORECAST_zh.md)。
 
 ## 核验与实际 GPU 测速
 

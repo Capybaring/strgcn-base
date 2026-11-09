@@ -413,23 +413,30 @@ def main(args):
 
         if train_config['trainer_name'] == 'TPatchForecastTrainer':
             packet = test_dataset.packet
+            is_record = packet.get('kind') == 'tpatch_records'
             np.save(os.path.join(result_save_dir_path, 'test_window_id.npy'), trainer.last_eval_window_id)
-            np.save(os.path.join(result_save_dir_path, 'test_window_start_native.npy'),
-                    np.asarray([w[4] for w in packet['windows']]))
-            np.save(os.path.join(result_save_dir_path, 'test_record_id.npy'),
-                    np.asarray([packet['records'][w[0]][0] for w in packet['windows']]))
+            if is_record:
+                np.save(os.path.join(result_save_dir_path, 'test_window_start_native.npy'),
+                        np.asarray([w[4] for w in packet['windows']]))
+                np.save(os.path.join(result_save_dir_path, 'test_record_id.npy'),
+                        np.asarray([packet['records'][w[0]][0] for w in packet['windows']]))
+            else:
+                np.save(os.path.join(result_save_dir_path, 'test_window_start_seconds.npy'),
+                        np.asarray([w[3] for w in packet['windows']]))
             protocol = dict(reference='usail-hkust/t-PatchGNN/lib/evaluation.py',
-                primary_metric='mse', primary_space='tpatch_input_space',
+                primary_metric='mse', primary_space='tpatch_input_space' if is_record else 'train_minmax_input_space',
                 aggregation='global_mean_per_variable_then_equal_mean_available_variables',
                 prediction_space='model_input_space', model_input_scaler=scaler_name,
-                normalization=('identity_on_preprocessed_file' if packet['dataset'] == 'ushcn' else
+                normalization=('MinMax_on_training_windows_only_no_validation_or_test' if not is_record else
+                               'identity_on_preprocessed_file' if packet['dataset'] == 'ushcn' else
                                'MinMax_on_seen_records_train_plus_validation_no_test'),
-                tpatch=global_args['tpatch_protocol'], native_time_unit=packet['time_unit'],
-                missingness='original_mask & finite(raw_value); observed zeros retained; invalid PhysioNet negatives masked',
+                tpatch=global_args.get('tpatch_protocol'), native_time_unit=packet['time_unit'] if is_record else 'seconds',
+                missingness=('original_mask & finite(raw_value); observed zeros retained; invalid PhysioNet negatives masked'
+                             if is_record else 'original_mask & finite(raw_value) & (raw_value != 0)'),
                 split=global_args['exen_processed_summary'],
                 use_exogenous=train_dataset.use_exogenous,
                 known_future_exogenous_var_ids=sorted(train_dataset.known_future_exogenous_var_ids),
-                baseline_exogenous_var_ids=packet['baseline_ids'],
+                baseline_exogenous_var_ids=packet.get('baseline_ids', []),
                 input_scaler_unseen_variable_ids=getattr(scaler, 'unseen_variable_ids', []),
                 batch_size=batch_size, model_name=model_config['model_name'],
                 model_parameters=model_config['model_params'],
@@ -439,6 +446,16 @@ def main(args):
                 target_ids=packet['target_ids'],
                 checkpoint_attention=model_config['model_params'].get('checkpoint_attention'),
                 packed_attention=data_config['dataset_params'].get('pack_attention', False))
+            protocol.update(target_names=[packet['names'][i] for i in packet['target_ids']],
+                exogenous_var_ids=sorted(train_dataset.exogenous_var_ids),
+                forecast_inputs=('Y_history_only' if not train_dataset.use_exogenous else
+                                 'Y_history_X_history_and_known_future' if train_dataset.known_future_exogenous_var_ids else
+                                 'Y_history_and_X_history'))
+            if not is_record:
+                protocol.update(dataset=global_args['dataset_name'],
+                    history_seconds=packet['history_seconds'],
+                    forecast_seconds=packet['duration_seconds'] - packet['history_seconds'],
+                    windowing='chronological_nonoverlapping_history_plus_forecast_windows')
             with open(os.path.join(result_save_dir_path, 'evaluation_protocol.json'), 'w') as f:
                 json.dump(protocol, f, indent=2, ensure_ascii=False, allow_nan=False)
             with open(os.path.join(result_save_dir_path, 'metrics.json'), 'w') as f:

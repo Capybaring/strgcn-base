@@ -1,5 +1,7 @@
 # t-PatchGNN / Hi-Patch + DAG MLP Fusion
 
+DIST 已支持：`BACKBONE=tpatchgnn DEVICE=cuda:0 bash scripts/run_patch_fusion.sh DIST`，Hi-Patch 使用 `BACKBONE=hipatch`。三个模型统一运行：`DEVICE=cuda:0 bash scripts/run_dist.sh`。数据与新评估见 [DIST 说明](../../docs/DIST_FORECAST_zh.md)。无参数仍只跑原四个数据集。
+
 这两个比较方法保留原始历史编码骨干，在预测端严格采用DAG的通用两层MLP融合结构：
 
 ```text
@@ -80,7 +82,7 @@ Hi-Patch对应 `config/HiPatchFusion/tpatch/activity.yaml`。直接运行时可�
 
 Hi-Patch保留其层次图算法，临床数据较密集时其图结构可能需要较大显存；本地只验证了小规模CPU前后向，尚未在你的GPU上验证默认完整batch的峰值显存。若需因显存调整batch，应记录配置差异，不能将不同batch下的epoch耗时直接视为同条件效率。
 
-MLP宽度64一致；新增参数数目为 `(DY+DX)*64+64+64*DY+DY`，已包含于模型参数和优化器中。默认lr=0.001，保持当前统一的30轮/5轮早停预算；学习率在这组配置中保持常数。正式对比仍应给各方法相同的调参预算和多个种子。
+MLP宽度64一致；新增参数数目为 `(DY+DX)*64+64+64*DY+DY`，已包含于模型参数和优化器中。默认lr=0.001，保持当前统一的30轮/5轮早停预算；学习率在这组配置中保持常数。正式对比应报告参数来源和额外调参预算，建议用多个种子检查稳定性；也可明确采用官方推荐配置。
 
 ## 骨干来源与兼容修改
 

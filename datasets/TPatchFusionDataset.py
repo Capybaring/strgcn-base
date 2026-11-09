@@ -2,6 +2,7 @@
 import math
 import torch
 from .TPatchRecordDataset import TPatchRecordDataset
+from .ExEnProcessedDataset import ExEnProcessedDataset
 
 
 class TPatchFusionDataset(TPatchRecordDataset):
@@ -13,7 +14,9 @@ class TPatchFusionDataset(TPatchRecordDataset):
         self.patch_size = float(patch_size)
         self.backbone_ids = list(self.packet['target_ids']) + sorted(self.exogenous_var_ids)
         self.local_id = {v: j for j, v in enumerate(self.backbone_ids)}
-        history = self.packet['history_native']
+        self.is_record = self.packet.get('kind') == 'tpatch_records'
+        history = self.packet['history_native'] if self.is_record else self.packet['history_seconds']
+        self.time_scale = self.packet['time_scale'] if self.is_record else self.packet['duration_seconds']
         self.npatch = math.ceil(history / self.patch_size)
         if self.npatch < 2:
             raise ValueError('Patch baselines require at least two history patches')
@@ -24,6 +27,8 @@ class TPatchFusionDataset(TPatchRecordDataset):
             fusion_inputs='predicted Y vector + future X vector only; no mask/delta/static branch')
 
     def __getitem__(self, index):
+        if not self.is_record:
+            return ExEnProcessedDataset.__getitem__(self, index), torch.tensor(0., dtype=torch.float64)
         sample = super().__getitem__(index)
         start = self.packet['windows'][index][4]
         # Parent long collate accepts (sample, metadata); aggregation is disabled.
@@ -34,7 +39,7 @@ class TPatchFusionDataset(TPatchRecordDataset):
         out = super().long_collate_fn(batch)
         B, width = out['batch_value'].shape
         N, M = len(self.backbone_ids), self.npatch
-        patch_span = self.patch_size / self.packet['time_scale']
+        patch_span = self.patch_size / self.time_scale
         groups, queries, future_vectors, locations = [], [], [], []
         local_map = torch.full((self.global_args['num_of_vals'],), -1, dtype=torch.long)
         local_map[self.backbone_ids] = torch.arange(N)
