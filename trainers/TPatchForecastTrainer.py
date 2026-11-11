@@ -87,7 +87,7 @@ class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
         if test_flag:
             self.last_eval_mask, self.last_eval_var_idx = arrays['mask'], arrays['variable_id']
             self.last_eval_window_id = arrays['window_id']
-        print('t-PatchGNN evaluation:', {k: summary[k] for k in metrics})
+        print(f'{type(self.model).__name__} evaluation:', {k: summary[k] for k in metrics})
         return summary['mse'], [(k, summary[k]) for k in metrics], arrays['prediction'], arrays['actual']
 
     def test(self, *args, **kwargs):
