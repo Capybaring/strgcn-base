@@ -9,6 +9,9 @@ case "$no_exogenous" in 0|1) ;; *) echo 'NO_EXOGENOUS must be 0 or 1' >&2; exit 
 mode=oracle_x
 [[ "$no_exogenous" == 0 ]] || mode=y_only
 tag="${RUN_TAG:-${model}_tpatch_v2_${mode}}"
+if [[ -z "${RUN_TAG:-}" && -n "${TIME_LAYERS:-}${VARIABLE_LAYERS:-}${CROSS_LAYERS:-}${WITHIN_VARIABLES:-}" ]]; then
+  tag="${tag}_t${TIME_LAYERS:-cfg}_v${VARIABLE_LAYERS:-cfg}_c${CROSS_LAYERS:-cfg}_${WITHIN_VARIABLES:-cfg}"
+fi
 if (( $# == 0 )); then set -- mimic physionet activity ushcn; fi
 for dataset in "$@"; do
   case "$dataset" in mimic|physionet|activity|ushcn) ;; *) echo "Unknown dataset: $dataset" >&2; exit 2;; esac
@@ -24,5 +27,9 @@ for dataset in "$@"; do
     command+=(--attention-dtype "$ATTENTION_DTYPE")
   fi
   printf '\nRunning %s / %s (%s)\n' "$model" "$dataset" "$mode"
+  [[ -z "${TIME_LAYERS:-}" ]] || command+=(--time-layers "$TIME_LAYERS")
+  [[ -z "${VARIABLE_LAYERS:-}" ]] || command+=(--variable-layers "$VARIABLE_LAYERS")
+  [[ -z "${CROSS_LAYERS:-}" ]] || command+=(--cross-layers "$CROSS_LAYERS")
+  [[ -z "${WITHIN_VARIABLES:-}" ]] || command+=(--within-variables "$WITHIN_VARIABLES")
   "${command[@]}"
 done

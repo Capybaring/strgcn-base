@@ -85,6 +85,8 @@ def test_dist_cli_metrics_and_chronological_exports(tmp_path, model, mode):
     result, saved = tmp_path / 'result', tmp_path / 'model'
     args = [sys.executable, 'main.py', '--config_path', str(config), '--device', 'cpu',
         '--model_save_dir_path', str(saved), '--result_save_dir_path', str(result)]
+    if model == 'ExEnGraphTransformer':
+        args += ['--time-layers', '0', '--variable-layers', '2', '--within-variables', 'endogenous']
     if mode == 'HistExo': args.append('--history-only-exogenous')
     if mode == 'NoExo': args.append('--no-exogenous')
     run = subprocess.run(args, cwd=ROOT, capture_output=True, text=True, timeout=90,
@@ -98,6 +100,10 @@ def test_dist_cli_metrics_and_chronological_exports(tmp_path, model, mode):
     assert protocol['aggregation'] == 'global_mean_per_variable_then_equal_mean_available_variables'
     assert protocol['use_exogenous'] == (mode != 'NoExo')
     assert bool(protocol['known_future_exogenous_var_ids']) == (mode == 'FullExo')
+    if model == 'ExEnGraphTransformer':
+        assert protocol['model_parameters']['n_layer'] == 0
+        assert protocol['model_parameters']['n_variable_layer'] == 2
+        assert not protocol['model_parameters']['within_exogenous']
     assert protocol['history_seconds'] == 7 and protocol['forecast_seconds'] == 3
     assert (protocol['fusion'] is not None) == (model != 'ExEnGraphTransformer')
     assert not (saved / 'evaluation_scaler.npz').exists()

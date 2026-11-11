@@ -136,7 +136,7 @@ def test_cli_both_modes_and_dag_metric_space(tmp_path,no_exogenous):
     assert p['model_name']=='ExEnGraphTransformer' and p['use_exogenous'] is (not no_exogenous)
     assert p['known_future_exogenous_var_ids']==([] if no_exogenous else [1,2])
     assert p['graph_operator']['attention_dtype']=='auto'
-    assert p['graph_operator']['total_layers']==7 and p['graph_operator']['bias_implementation']=='augmented_QK'
+    assert p['graph_operator']['total_layers']==8 and p['graph_operator']['bias_implementation']=='augmented_QK'
     from utils.dag_evaluation import DAGEvaluationScaler
     scaler=DAGEvaluationScaler().load(tmp_path/'model/evaluation_scaler.npz')
     mask=np.load(tmp_path/'result/test_y_mask.npy').astype(bool);ids=np.load(tmp_path/'result/test_var_idx.npy')

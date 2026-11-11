@@ -13,6 +13,9 @@ mode="${MODE:-FullExo}"
 case "$mode" in FullExo|HistExo|NoExo) ;; *) echo 'MODE must be FullExo, HistExo or NoExo' >&2; exit 2;; esac
 for model in "${models[@]}"; do
   tag="${RUN_TAG:-dist_variable_macro_${mode}}"
+  if [[ -z "${RUN_TAG:-}" && -n "${TIME_LAYERS:-}${VARIABLE_LAYERS:-}${CROSS_LAYERS:-}${WITHIN_VARIABLES:-}" ]]; then
+    tag="${tag}_t${TIME_LAYERS:-cfg}_v${VARIABLE_LAYERS:-cfg}_c${CROSS_LAYERS:-cfg}_${WITHIN_VARIABLES:-cfg}"
+  fi
   command=("${PYTHON:-python}" -u main.py
     --config_path "config/${model}/processed/DIST.yaml"
     --model_save_dir_path "model_states/${tag}/${model}/DIST"
@@ -24,5 +27,11 @@ for model in "${models[@]}"; do
   if [[ "$mode" == HistExo ]]; then command+=(--history-only-exogenous); fi
   if [[ "$mode" == NoExo ]]; then command+=(--no-exogenous); fi
   printf '\nRunning %s / DIST (%s, variable-macro MinMax metrics)\n' "$model" "$mode"
+  if [[ "$model" == ExEnGraphTransformer ]]; then
+    [[ -z "${TIME_LAYERS:-}" ]] || command+=(--time-layers "$TIME_LAYERS")
+    [[ -z "${VARIABLE_LAYERS:-}" ]] || command+=(--variable-layers "$VARIABLE_LAYERS")
+    [[ -z "${CROSS_LAYERS:-}" ]] || command+=(--cross-layers "$CROSS_LAYERS")
+    [[ -z "${WITHIN_VARIABLES:-}" ]] || command+=(--within-variables "$WITHIN_VARIABLES")
+  fi
   "${command[@]}"
 done

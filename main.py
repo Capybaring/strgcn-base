@@ -63,6 +63,26 @@ def main(args):
     train_config = config_all["train_config"]
     model_config = config_all["model_config"]
     data_config = config_all["data_config"]
+    stage_overrides = {'n_layer': getattr(args, 'time_layers', None),
+                       'n_variable_layer': getattr(args, 'variable_layers', None),
+                       'n_cross_layer': getattr(args, 'cross_layers', None)}
+    within = getattr(args, 'within_variables', None)
+    if any(value is not None for value in stage_overrides.values()) or within is not None:
+        if model_config['model_name'] != 'ExEnGraphTransformer':
+            raise ValueError('Graph stage overrides require ExEnGraphTransformer')
+        model_config['model_params'].update({k: v for k, v in stage_overrides.items() if v is not None})
+        if within is not None:
+            model_config['model_params'].update(within_exogenous=within in ('both', 'exogenous'),
+                                                within_endogenous=within in ('both', 'endogenous'))
+    if model_config['model_name'] == 'ExEnGraphTransformer':
+        params = model_config['model_params']
+        if not params.get('within_exogenous', True) and not params.get('within_endogenous', True):
+            params['n_variable_layer'] = 0
+    if model_config['model_name'] == 'ExEnGraphTransformer' and data_config['dataset_name'] == 'TPatchRecordDataset':
+        params = model_config['model_params']
+        data_config['dataset_params']['within_relations'] = [r for r, enabled in (
+            (3, params.get('within_exogenous', True)), (4, params.get('within_endogenous', True)))
+            if enabled and params.get('n_variable_layer', 0) > 0]
     if getattr(args,'attention_dtype',None) is not None:
         if model_config['model_name']!='ExEnGraphTransformer':
             raise ValueError('--attention-dtype requires ExEnGraphTransformer')
@@ -400,7 +420,10 @@ def main(args):
                     attention_dtype=p.get('attention_dtype','float32'),content_scaled_dot_product=True,
                     use_time_bias=p.get('use_time_bias',True),use_variable_bias=p.get('use_variable_bias',True),
                     time_bias_init=p.get('time_bias_init',1.),variable_bias_init=p.get('variable_bias_init',.01),
-                    total_layers=p.get('n_layer',2)+p.get('n_cross_layer',1),
+                    total_layers=p.get('n_layer',2)+p.get('n_variable_layer',0)+p.get('n_cross_layer',1),
+                    n_variable_layer=p.get('n_variable_layer',0),
+                    within_exogenous=p.get('within_exogenous',True),
+                    within_endogenous=p.get('within_endogenous',True),
                     empty_neighborhood='residual_and_FFN',bias_implementation='augmented_QK',
                     parameter_count=sum(param.numel() for param in model.parameters()))
             with open(os.path.join(result_save_dir_path, 'evaluation_protocol.json'), 'w') as f:
@@ -506,6 +529,10 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--device", default=None, help="Override configured device, e.g. cpu or cuda:0")
+    parser.add_argument('--time-layers', type=int, default=None)
+    parser.add_argument('--variable-layers', type=int, default=None)
+    parser.add_argument('--cross-layers', type=int, default=None)
+    parser.add_argument('--within-variables', choices=['both', 'exogenous', 'endogenous', 'none'], default=None)
     parser.add_argument("--tpatch-data-root", default=None, help="Root containing activity/mimic/physionet/ushcn processed folders")
     parser.add_argument("--history-only-exogenous", action="store_true", help="Keep historical X but remove true future X")
     parser.add_argument("--no-exogenous", action="store_true", help="Remove ALL historical and future exogenous input nodes")

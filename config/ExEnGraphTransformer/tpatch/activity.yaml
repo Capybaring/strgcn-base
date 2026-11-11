@@ -30,6 +30,9 @@ model_config:
     time_embedding_type: rbf
     receiver_chunk_size: 512
     n_cross_layer: 3
+    n_variable_layer: 1
+    within_exogenous: true
+    within_endogenous: true
     num_heads: 4
     ffn_multiplier: 2
     attention_backend: sdpa

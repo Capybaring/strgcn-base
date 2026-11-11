@@ -77,7 +77,7 @@ X 使用不晚于查询的最近有效值，可回退至历史；均无值时填
 HistExo 将融合端未来 X 置 0；NoExo 同时屏蔽历史 X；保留相同变量槽和参数规模。
 
 DIST 没有两个骨干的官方数据集配置。当前为运行起点：hidden=32、1 层、1 头、lr=0.001、30 轮/5 轮早停；60 秒 patch 用于控制密集记录的图大小，不宣称最优。
-ExEnGraphTransformer 保留原 hidden=32、4+3 层、lr=0.003 和 attention/checkpoint 行为。
+ExEnGraphTransformer 保留原 hidden=32、4+1+3 层（时间/组内变量/X→Y）、lr=0.003 和 attention/checkpoint 行为。
 Hi-Patch 图内边随 patch 观测数平方增长，实际显存和吞吐需在目标 GPU 测量；batch=1 不保证所有窗口均适合任意 GPU。
 
 ```bash

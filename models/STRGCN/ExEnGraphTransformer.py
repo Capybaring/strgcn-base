@@ -1,4 +1,4 @@
-"""Content attention + graph biases, retaining ExEn roles and 2+1 stages.
+"""Content attention and graph biases with independent time/variable stages.
 
 Sorted legal source groups are shared with ExEn. No CSR tensor or graph
 convolution is used. Low-rank time/variable biases are folded into Q/K;
@@ -12,10 +12,10 @@ from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
 from .ExEn import ExEn
-from .SparseRelations import build_sparse_relations
+from .SparseRelations import build_sparse_relations, build_within_variable_relations
 from .STRGCNDirect import time_features
 from .TimeEmbedding import TimeEmbedding
-from .PackedAttention import PackedAttentionPlan
+from .PackedAttention import PackedAttentionPlan, pack_attention_plan
 
 
 class GraphAttentionLayer(nn.Module):
@@ -24,7 +24,7 @@ class GraphAttentionLayer(nn.Module):
                  time_embedding_type='rbf', attention_backend='sdpa',
                  attention_dtype='float32', attention_dropout=0.,
                  use_time_bias=True, use_variable_bias=True,
-                 time_bias_init=1., variable_bias_init=.01, checkpoint_attention=True):
+                 time_bias_init=1., variable_bias_init=.01, checkpoint_attention=True, relations=None):
         super().__init__()
         if not isinstance(num_heads,int) or num_heads<1 or dim%num_heads:
             raise ValueError('num_heads must be positive and divide hid_dim')
@@ -40,10 +40,12 @@ class GraphAttentionLayer(nn.Module):
             raise ValueError('checkpoint_attention must be boolean')
         self.checkpoint_attention = checkpoint_attention
         self.cross,self.num_heads,self.head_dim = cross,num_heads,dim//num_heads
+        self.relation_ids = tuple(relations) if relations is not None else ((2,) if cross else (0, 1))
+        self.within_group = relations is not None
         self.backend,self.attention_dtype = attention_backend,attention_dtype
         self.attention_dropout = attention_dropout
-        self.use_time_bias,self.use_variable_bias = use_time_bias,use_variable_bias and cross
-        count=1 if cross else 2
+        self.use_time_bias,self.use_variable_bias = use_time_bias,use_variable_bias and (cross or self.within_group)
+        count = len(self.relation_ids)
         self.norm_attention = nn.LayerNorm(dim) if use_norm else nn.Identity()
         self.norm_ffn = nn.LayerNorm(dim) if use_norm else nn.Identity()
         self.q_proj=nn.ModuleList([nn.Linear(dim,dim,bias=use_bias) for _ in range(count)])
@@ -120,7 +122,7 @@ class GraphAttentionLayer(nn.Module):
             q,k,v=self._qkv(normalized,p,var_idx,index)
             values=[torch.zeros_like(row) for row in h]
             active=torch.zeros_like(valid)
-            relation=2 if self.cross else index
+            relation = self.relation_ids[index]
             for group in plan:
                 if group.relation!=relation:continue
                 b,src,dst=group.batch,group.sources,group.receivers
@@ -139,10 +141,16 @@ class GraphAttentionLayer(nn.Module):
             message=message+torch.where(active.unsqueeze(-1),projected,0)
         out=h+self.dropout(message)
         out=out+self.dropout(self.ffn(self.norm_ffn(out)))
+        return self._select_receivers(out, h, valid, node_type)
+
+    def _select_receivers(self, out, h, valid, node_type):
+        exogenous = (node_type == 0) | (node_type == 2)
         if self.cross:
-            exo=(node_type==0)|(node_type==2)
-            out=torch.where((valid & ~exo).unsqueeze(-1),out,h)
-        return torch.where(valid.unsqueeze(-1),out,0)
+            out = torch.where((valid & ~exogenous).unsqueeze(-1), out, h)
+        if self.within_group:
+            selected = (exogenous & (3 in self.relation_ids)) | (~exogenous & (4 in self.relation_ids))
+            out = torch.where((valid & selected).unsqueeze(-1), out, h)
+        return torch.where(valid.unsqueeze(-1), out, 0)
 
 
     def _forward_packed(self, h, var_idx, valid, timestamp, node_type, plan):
@@ -156,7 +164,7 @@ class GraphAttentionLayer(nn.Module):
             q, k, v = (x.transpose(1, 2).reshape(B * L, self.num_heads, -1) for x in (q, k, v))
             value = h.new_zeros(B * L, D)
             active = torch.zeros(B * L, dtype=torch.bool, device=h.device)
-            relation = 2 if self.cross else index
+            relation = self.relation_ids[index]
             for bucket in plan.buckets:
                 if bucket.relation != relation:
                     continue
@@ -177,27 +185,55 @@ class GraphAttentionLayer(nn.Module):
             message = message + torch.where(active.reshape(B, L, 1), projected, 0)
         out = h + self.dropout(message)
         out = out + self.dropout(self.ffn(self.norm_ffn(out)))
-        if self.cross:
-            exo = (node_type == 0) | (node_type == 2)
-            out = torch.where((valid & ~exo).unsqueeze(-1), out, h)
-        return torch.where(valid.unsqueeze(-1), out, 0)
+        return self._select_receivers(out, h, valid, node_type)
 
 
 class ExEnGraphTransformer(ExEn):
-    """Same sanitized inputs, role/status encoding and forecast head as ExEn."""
+    """Time, optional within-role variable, and X-to-Y attention stages."""
     def __init__(self,*args,num_heads=2,ffn_multiplier=2,attention_backend='sdpa',
                  attention_dtype='float32',attention_dropout=0.,use_time_bias=True,
                  use_variable_bias=True,time_bias_init=1.,variable_bias_init=.01,
                  time_embedding_type='rbf',receiver_chunk_size=512,
-                 gcn_type='attention',gcn_depth=1,relation_backend='sparse_csr',checkpoint_attention=True,**kwargs):
+                 gcn_type='attention',gcn_depth=1,relation_backend='sparse_csr',checkpoint_attention=True,
+                 n_variable_layer=0, within_exogenous=True, within_endogenous=True, **kwargs):
         if relation_backend!='sparse_csr':
             raise ValueError('Use grouped source plan (relation_backend=sparse_csr); attention_backend selects the kernel')
+        if not isinstance(n_variable_layer, int) or isinstance(n_variable_layer, bool) or n_variable_layer < 0:
+            raise ValueError('n_variable_layer must be a nonnegative integer')
+        if not isinstance(within_exogenous, bool) or not isinstance(within_endogenous, bool):
+            raise ValueError('Within-group switches must be booleans')
         self._attention_options=dict(num_heads=num_heads,ffn_multiplier=ffn_multiplier,
             attention_backend=attention_backend,attention_dtype=attention_dtype,attention_dropout=attention_dropout,
             use_time_bias=use_time_bias,use_variable_bias=use_variable_bias,
             time_bias_init=time_bias_init,variable_bias_init=variable_bias_init,time_embedding_type=time_embedding_type,checkpoint_attention=checkpoint_attention)
         super().__init__(*args,gcn_type=gcn_type,gcn_depth=gcn_depth,time_embedding_type=time_embedding_type,
                          receiver_chunk_size=receiver_chunk_size,relation_backend=relation_backend,**kwargs)
+        self.within_relations = tuple(r for r, enabled in ((3, within_exogenous), (4, within_endogenous)) if enabled)
+        self.variable_layers = nn.ModuleList([
+            GraphAttentionLayer(*self._relation_layer_args, relations=self.within_relations, **self._attention_options)
+            for _ in range(n_variable_layer if self.within_relations else 0)])
+
+    def _validate_depths(self, n_layer, n_cross_layer):
+        for value in (n_layer, n_cross_layer):
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                raise ValueError('Graph Transformer stage depths must be nonnegative integers')
+
+    def _apply_variable_layers(self, h, p, var_idx, valid, timestamp, node_type, plan):
+        if not self.variable_layers:
+            return h
+        if isinstance(plan, PackedAttentionPlan):
+            if plan.within_relations != self.within_relations:
+                # Support callers that built a legacy temporal-only packed plan.
+                metadata = [x.detach().cpu() for x in (timestamp, var_idx, node_type, valid)]
+                groups = build_within_variable_relations(*metadata, self.within_relations)
+                plan = pack_attention_plan(*metadata, groups=groups,
+                    within_relations=self.within_relations).to(h.device)
+        else:
+            plan = build_within_variable_relations(timestamp, var_idx, node_type, valid, self.within_relations)
+        for layer in self.variable_layers:
+            h = layer(h, p, var_idx, None, valid, timestamp, node_type,
+                      self.receiver_chunk_size, sparse_plan=plan)
+        return h
 
     def _validate_operator(self,gcn_type,gcn_depth):
         if gcn_type!='attention' or gcn_depth!=1:

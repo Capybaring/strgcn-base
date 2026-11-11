@@ -1,3 +1,5 @@
+当前默认采用时间 4 层、组内变量 1 层、X→Y 3 层。新增模块和独立消融命令见 [组内变量模块](WITHIN_VARIABLE_ATTENTION_zh.md)。下文原有测速记录对应其记录时的模型配置。
+
 # ExEnGraphTransformer：内容注意力与时间/变量图偏置
 
 新模型 `ExEnGraphTransformer` 在观测节点上使用多头注意力和 FFN，替换 ExEnAligned 的

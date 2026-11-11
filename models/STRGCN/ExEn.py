@@ -122,8 +122,7 @@ class ExEn(nn.Module):
         self._validate_operator(gcn_type, gcn_depth)
         if time_embedding_type not in ('rbf', 'rope', 'transformer') or hid_dim % 2:
             raise ValueError('Use an even hid_dim and rbf/rope/transformer time embedding')
-        if n_layer < 1 or n_cross_layer < 1:
-            raise ValueError('Both stage depths must be positive')
+        self._validate_depths(n_layer, n_cross_layer)
         global_args = global_args or {}
         if receiver_chunk_size is not None and (not isinstance(receiver_chunk_size, int) or receiver_chunk_size < 1):
             raise ValueError('receiver_chunk_size must be a positive integer or null')
@@ -150,6 +149,7 @@ class ExEn(nn.Module):
         self.role_embedding = nn.Embedding(2, hid_dim)
         self.status_embedding = nn.Embedding(3, hid_dim)
         args = (hid_dim, node_dim, self.num_vars, dropout, use_bias, use_norm)
+        self._relation_layer_args = args
         self.temporal_layers = nn.ModuleList([self._make_relation_layer(*args) for _ in range(n_layer)])
         self.cross_layers = nn.ModuleList([self._make_relation_layer(*args, cross=True) for _ in range(n_cross_layer)])
         self.lambda_ = nn.Parameter(torch.tensor(0.5))
@@ -162,6 +162,13 @@ class ExEn(nn.Module):
 
     def _make_relation_layer(self, *args, cross=False):
         return DirectedRelationLayer(*args, cross=cross)
+
+    def _validate_depths(self, n_layer, n_cross_layer):
+        if n_layer < 1 or n_cross_layer < 1:
+            raise ValueError('Both stage depths must be positive')
+
+    def _apply_variable_layers(self, h, p, var_idx, valid, timestamp, node_type, plan):
+        return h
 
     def forward(self, batch_value, batch_timestamp, batch_var_idx,
                 batch_pred_mask=None, batch_pad_mask=None, batch_time_id=None,
@@ -215,6 +222,7 @@ class ExEn(nn.Module):
         for layer in self.temporal_layers:
             h = layer(h, p, var_idx, masks[:2] if masks is not None else None, valid,
                       tt, types, self.receiver_chunk_size, sparse_plan=sparse_plan)
+        h = self._apply_variable_layers(h, p, var_idx, valid, tt, types, sparse_plan)
         for layer in self.cross_layers:
             h = layer(h, p, var_idx, masks[2:] if masks is not None else None, valid,
                       tt, types, self.receiver_chunk_size, sparse_plan=sparse_plan)

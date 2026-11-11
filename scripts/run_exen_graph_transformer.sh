@@ -18,6 +18,9 @@ if [[ "$no_exogenous" == 1 ]]; then
 else
   run_tag="${RUN_TAG:-exen_graph_transformer_known_future}"
 fi
+if [[ -z "${RUN_TAG:-}" && -n "${TIME_LAYERS:-}${VARIABLE_LAYERS:-}${CROSS_LAYERS:-}${WITHIN_VARIABLES:-}" ]]; then
+  run_tag="${run_tag}_t${TIME_LAYERS:-cfg}_v${VARIABLE_LAYERS:-cfg}_c${CROSS_LAYERS:-cfg}_${WITHIN_VARIABLES:-cfg}"
+fi
 datasets=(BE NP PJM FR DE Energy Sdwpfm1 Sdwpfm2 Sdwpfh1 Sdwpfh2 Colbun Rapel)
 if [[ "$include_dist" == 1 ]]; then
   datasets+=(DIST)
@@ -37,5 +40,9 @@ for dataset in "${datasets[@]}"; do
   if [[ "$no_exogenous" == 1 ]]; then
     command+=(--no-exogenous)
   fi
+  [[ -z "${TIME_LAYERS:-}" ]] || command+=(--time-layers "$TIME_LAYERS")
+  [[ -z "${VARIABLE_LAYERS:-}" ]] || command+=(--variable-layers "$VARIABLE_LAYERS")
+  [[ -z "${CROSS_LAYERS:-}" ]] || command+=(--cross-layers "$CROSS_LAYERS")
+  [[ -z "${WITHIN_VARIABLES:-}" ]] || command+=(--within-variables "$WITHIN_VARIABLES")
   "${command[@]}"
 done

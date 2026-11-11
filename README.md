@@ -157,7 +157,7 @@ DEVICE=cuda:0 bash scripts/run_exen_graph_transformer.sh
 DEVICE=cuda:0 bash scripts/run_exen_graph_transformer_no_exogenous.sh
 ```
 
-Current dataset configs use 4 temporal layers + 3 X→Y layers, 4 heads,
+Current dataset configs use 4 temporal layers + 1 within-role variable layer + 3 X→Y layers, 4 heads,
 hidden dimension 32 and dropout 0.3 (attention dropout remains 0).
 Both runners exclude DIST by default and use separate output directories.
 Set `ATTENTION_DTYPE=auto` for BF16/FP16 CUDA attention; the default is FP32.
@@ -206,3 +206,5 @@ BACKBONE=hipatch MODE=NoExo DEVICE=cuda:0 bash scripts/run_patch_fusion.sh activ
 ## DIST with variable-macro evaluation
 
 ExEnGraphTransformer, TPatchGNNFusion and HiPatchFusion now support DIST with train-only MinMax and global variable-macro MSE/MAE/RMSE. Run all three with `DEVICE=cuda:0 bash scripts/run_dist.sh`. See [DIST instructions](docs/DIST_FORECAST_zh.md) for individual models and FullExo/HistExo/NoExo modes. Other processed datasets retain their existing evaluation configs.
+
+Within-role X→X and Y→Y attention can be ablated independently. See [module controls](docs/WITHIN_VARIABLE_ATTENTION_zh.md).

@@ -1,7 +1,7 @@
 """CPU-built, size-bucketed legal relations for batched observation attention."""
 from dataclasses import dataclass
 import torch
-from .SparseRelations import build_sparse_relations
+from .SparseRelations import build_sparse_relations, build_within_variable_relations
 
 
 @dataclass
@@ -21,13 +21,14 @@ class AttentionBucket:
 @dataclass
 class PackedAttentionPlan:
     buckets: list
+    within_relations: tuple = ()
 
     def to(self, device, non_blocking=False):
-        return PackedAttentionPlan([b.to(device, non_blocking) for b in self.buckets])
+        return PackedAttentionPlan([b.to(device, non_blocking) for b in self.buckets], self.within_relations)
 
 
 def pack_attention_plan(timestamp, var_idx, node_type, valid, receiver_chunk=512,
-                        max_score_elements=1048576):
+                        max_score_elements=1048576, within_relations=(), groups=None):
     """Called in CPU collate: no per-variable host reads during CUDA forward.
 
     Power-of-two padding groups similarly sized relations. Budget is score slots
@@ -38,7 +39,10 @@ def pack_attention_plan(timestamp, var_idx, node_type, valid, receiver_chunk=512
     if receiver_chunk < 1 or max_score_elements < 1:
         raise ValueError('Attention budgets must be positive')
     width = timestamp.shape[1]
-    groups = build_sparse_relations(timestamp, var_idx, node_type, valid)
+    if groups is None:
+        groups = build_sparse_relations(timestamp, var_idx, node_type, valid)
+        if within_relations:
+            groups += build_within_variable_relations(timestamp, var_idx, node_type, valid, within_relations)
     by_size = {}
     def rounded(n): return 1 << (n - 1).bit_length()
     for group in groups:
@@ -66,4 +70,4 @@ def pack_attention_plan(timestamp, var_idx, node_type, valid, receiver_chunk=512
                 destinations.append(d)
             buckets.append(AttentionBucket(relation, src, dst, deg,
                 torch.cat(pos), torch.cat(destinations)))
-    return PackedAttentionPlan(buckets)
+    return PackedAttentionPlan(buckets, tuple(within_relations))

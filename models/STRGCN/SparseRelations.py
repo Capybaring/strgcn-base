@@ -12,7 +12,7 @@ from torch.utils.checkpoint import checkpoint
 @dataclass
 class RelationGroup:
     batch: int
-    relation: int  # 0=X time, 1=Y time, 2=X->Y
+    relation: int  # 0=X time, 1=Y time, 2=X->Y, 3=within X, 4=within Y
     sources: torch.Tensor
     receivers: torch.Tensor
     degrees: torch.Tensor
@@ -43,6 +43,30 @@ def build_sparse_relations(timestamp, var_idx, node_type, valid):
             if len(dst):
                 src = src[:int(degree.max())]
                 groups.append(RelationGroup(batch, relation, src, dst, degree))
+    return groups
+
+
+@torch.no_grad()
+def build_within_variable_relations(timestamp, var_idx, node_type, valid, relations=(3, 4)):
+    """Different variables within X (3) or Y (4), causal observation sources only."""
+    groups = []
+    for batch in range(timestamp.shape[0]):
+        time, variable, role, keep = timestamp[batch], var_idx[batch], node_type[batch], valid[batch].bool()
+        exogenous = (role == 0) | (role == 2)
+        observed = keep & (role != 3)
+        for relation in relations:
+            members = keep & (exogenous if relation == 3 else ~exogenous)
+            for receiver_variable in torch.unique(variable[members]).tolist():
+                receivers = torch.where(members & (variable == receiver_variable))[0]
+                sources = torch.where(observed & members & (variable != receiver_variable))[0]
+                if not len(sources):
+                    continue
+                sources = sources[torch.argsort(time[sources], stable=True)]
+                degrees = torch.searchsorted(time[sources].contiguous(), time[receivers].contiguous(), right=True)
+                active = degrees > 0
+                if active.any():
+                    receivers, degrees = receivers[active], degrees[active]
+                    groups.append(RelationGroup(batch, relation, sources[:int(degrees.max())], receivers, degrees))
     return groups
 
 
