@@ -24,7 +24,8 @@ class GraphAttentionLayer(nn.Module):
                  time_embedding_type='rbf', attention_backend='sdpa',
                  attention_dtype='float32', attention_dropout=0.,
                  use_time_bias=True, use_variable_bias=True,
-                 time_bias_init=1., variable_bias_init=.01, checkpoint_attention=True, relations=None):
+                 time_bias_init=1., variable_bias_init=.01, checkpoint_attention=True, relations=None,
+                 window_conditioning=False):
         super().__init__()
         if not isinstance(num_heads,int) or num_heads<1 or dim%num_heads:
             raise ValueError('num_heads must be positive and divide hid_dim')
@@ -52,6 +53,7 @@ class GraphAttentionLayer(nn.Module):
         self.k_proj=nn.ModuleList([nn.Linear(dim,dim,bias=use_bias) for _ in range(count)])
         self.v_proj=nn.ModuleList([nn.Linear(dim,dim,bias=use_bias) for _ in range(count)])
         self.out_proj=nn.ModuleList([nn.Linear(dim,dim,bias=use_bias) for _ in range(count)])
+        self.window_query = nn.ModuleList([nn.Linear(dim, dim, bias=False) for _ in range(count)]) if window_conditioning else None
         self.time_embedding=TimeEmbedding(dim,time_embedding_type) if use_time_bias else None
         if use_time_bias:
             self.time_strength=nn.Parameter(torch.full((count,num_heads),float(time_bias_init)))
@@ -66,9 +68,12 @@ class GraphAttentionLayer(nn.Module):
     def _heads(self,x):
         return x.reshape(*x.shape[:-1],self.num_heads,self.head_dim).transpose(1,2)
 
-    def _qkv(self,h,p,ids,index):
+    def _qkv(self,h,p,ids,index,window_state=None):
         # scale=1 in SDPA; scale ONLY the content part by sqrt(head_dim).
-        q=self._heads(self.q_proj[index](h))/math.sqrt(self.head_dim)
+        content_q = self.q_proj[index](h)
+        if window_state is not None:
+            content_q = content_q + self.window_query[index](window_state).unsqueeze(1)
+        q=self._heads(content_q)/math.sqrt(self.head_dim)
         k=self._heads(self.k_proj[index](h))
         v=self._heads(self.v_proj[index](h))
         qs,ks=[q],[k]
@@ -110,16 +115,16 @@ class GraphAttentionLayer(nn.Module):
         return out[...,:self.head_dim].to(dtype)
 
     def forward(self,h,p,var_idx,masks,valid,timestamp=None,node_type=None,
-                receiver_chunk_size=None,sparse_plan=None):
+                receiver_chunk_size=None,sparse_plan=None,receiver_mask=None,window_state=None):
         plan=sparse_plan if sparse_plan is not None else build_sparse_relations(timestamp,var_idx,node_type,valid)
         if isinstance(plan, PackedAttentionPlan):
-            return self._forward_packed(h, var_idx, valid, timestamp, node_type, plan)
+            return self._forward_packed(h, var_idx, valid, timestamp, node_type, plan, receiver_mask, window_state)
         normalized=self.norm_attention(h)
         p=time_features(self.time_embedding,timestamp,valid) if self.use_time_bias else None
         chunk=receiver_chunk_size or 512
         message=torch.zeros_like(h)
         for index in range(len(self.q_proj)):
-            q,k,v=self._qkv(normalized,p,var_idx,index)
+            q,k,v=self._qkv(normalized,p,var_idx,index,window_state)
             values=[torch.zeros_like(row) for row in h]
             active=torch.zeros_like(valid)
             relation = self.relation_ids[index]
@@ -141,25 +146,27 @@ class GraphAttentionLayer(nn.Module):
             message=message+torch.where(active.unsqueeze(-1),projected,0)
         out=h+self.dropout(message)
         out=out+self.dropout(self.ffn(self.norm_ffn(out)))
-        return self._select_receivers(out, h, valid, node_type)
+        return self._select_receivers(out, h, valid, node_type, receiver_mask)
 
-    def _select_receivers(self, out, h, valid, node_type):
+    def _select_receivers(self, out, h, valid, node_type, receiver_mask=None):
         exogenous = (node_type == 0) | (node_type == 2)
         if self.cross:
             out = torch.where((valid & ~exogenous).unsqueeze(-1), out, h)
         if self.within_group:
             selected = (exogenous & (3 in self.relation_ids)) | (~exogenous & (4 in self.relation_ids))
             out = torch.where((valid & selected).unsqueeze(-1), out, h)
+        if receiver_mask is not None:
+            out = torch.where(receiver_mask.unsqueeze(-1), out, h)
         return torch.where(valid.unsqueeze(-1), out, 0)
 
 
-    def _forward_packed(self, h, var_idx, valid, timestamp, node_type, plan):
+    def _forward_packed(self, h, var_idx, valid, timestamp, node_type, plan, receiver_mask=None, window_state=None):
         normalized = self.norm_attention(h)
         p = time_features(self.time_embedding, timestamp, valid) if self.use_time_bias else None
         B, L, D = h.shape
         message = torch.zeros_like(h)
         for index in range(len(self.q_proj)):
-            q, k, v = self._qkv(normalized, p, var_idx, index)
+            q, k, v = self._qkv(normalized, p, var_idx, index, window_state)
             # Flat observation indices keep gather/scatter batched across records.
             q, k, v = (x.transpose(1, 2).reshape(B * L, self.num_heads, -1) for x in (q, k, v))
             value = h.new_zeros(B * L, D)
@@ -185,7 +192,7 @@ class GraphAttentionLayer(nn.Module):
             message = message + torch.where(active.reshape(B, L, 1), projected, 0)
         out = h + self.dropout(message)
         out = out + self.dropout(self.ffn(self.norm_ffn(out)))
-        return self._select_receivers(out, h, valid, node_type)
+        return self._select_receivers(out, h, valid, node_type, receiver_mask)
 
 
 class ExEnGraphTransformer(ExEn):
@@ -195,23 +202,60 @@ class ExEnGraphTransformer(ExEn):
                  use_variable_bias=True,time_bias_init=1.,variable_bias_init=.01,
                  time_embedding_type='rbf',receiver_chunk_size=512,
                  gcn_type='attention',gcn_depth=1,relation_backend='sparse_csr',checkpoint_attention=True,
-                 n_variable_layer=0, within_exogenous=True, within_endogenous=True, **kwargs):
+                 n_variable_layer=0, within_exogenous=True, within_endogenous=True, rolling_window_size=None, **kwargs):
         if relation_backend!='sparse_csr':
             raise ValueError('Use grouped source plan (relation_backend=sparse_csr); attention_backend selects the kernel')
         if not isinstance(n_variable_layer, int) or isinstance(n_variable_layer, bool) or n_variable_layer < 0:
             raise ValueError('n_variable_layer must be a nonnegative integer')
         if not isinstance(within_exogenous, bool) or not isinstance(within_endogenous, bool):
             raise ValueError('Within-group switches must be booleans')
+        if rolling_window_size is not None and (isinstance(rolling_window_size, bool) or
+                not isinstance(rolling_window_size, (int, float)) or not math.isfinite(rolling_window_size) or rolling_window_size <= 0):
+            raise ValueError('rolling_window_size must be a positive finite number or null')
+        self.rolling_window_size = rolling_window_size
         self._attention_options=dict(num_heads=num_heads,ffn_multiplier=ffn_multiplier,
             attention_backend=attention_backend,attention_dtype=attention_dtype,attention_dropout=attention_dropout,
             use_time_bias=use_time_bias,use_variable_bias=use_variable_bias,
-            time_bias_init=time_bias_init,variable_bias_init=variable_bias_init,time_embedding_type=time_embedding_type,checkpoint_attention=checkpoint_attention)
+            time_bias_init=time_bias_init,variable_bias_init=variable_bias_init,time_embedding_type=time_embedding_type,checkpoint_attention=checkpoint_attention,
+            window_conditioning=rolling_window_size is not None)
         super().__init__(*args,gcn_type=gcn_type,gcn_depth=gcn_depth,time_embedding_type=time_embedding_type,
                          receiver_chunk_size=receiver_chunk_size,relation_backend=relation_backend,**kwargs)
         self.within_relations = tuple(r for r, enabled in ((3, within_exogenous), (4, within_endogenous)) if enabled)
         self.variable_layers = nn.ModuleList([
             GraphAttentionLayer(*self._relation_layer_args, relations=self.within_relations, **self._attention_options)
             for _ in range(n_variable_layer if self.within_relations else 0)])
+        if rolling_window_size is not None:
+            from .RollingWindows import WindowPatternMemory
+            self.window_memory = WindowPatternMemory(self.encoder.out_features, self.num_vars, num_heads)
+
+    def _run_graph_layers(self, h, p, var_idx, valid, tt, types, sparse_plan, masks):
+        if self.rolling_window_size is None:
+            return super()._run_graph_layers(h, p, var_idx, valid, tt, types, sparse_plan, masks)
+        from .RollingWindows import pack_rolling_attention_plan
+        if not isinstance(sparse_plan, PackedAttentionPlan) or sparse_plan.windows is None:
+            # Direct model calls may omit dataset metadata. Use actual observed bounds;
+            # production datasets supply exact task/forecast bounds in CPU collation.
+            meta = [x.detach().cpu() for x in (tt, var_idx, types, valid)]
+            sparse_plan = pack_rolling_attention_plan(*meta, self.rolling_window_size,
+                within_relations=self.within_relations).to(h.device)
+        tokens, token_valid = [], []
+        for window in sparse_plan.windows:
+            state = self.window_memory.predict(tokens, token_valid, window.bounds)
+            stages = []
+            for layers in (self.temporal_layers, self.variable_layers, self.cross_layers):
+                for layer in layers:
+                    h = layer(h, p, var_idx, None, valid, tt, types,
+                        self.receiver_chunk_size, sparse_plan=window.plan,
+                        receiver_mask=window.receivers, window_state=state)
+                stages.append(h)
+            # Past nodes remain frozen in h. Only known current observations become
+            # sources or summary inputs; query representations NEVER leave a window.
+            known = window.receivers & (types != 3)
+            token = self.window_memory.summarize(stages, tt, var_idx, types, known, window.bounds)
+            tokens.append(token)
+            token_valid.append(window.present)
+        return h
+
 
     def _validate_depths(self, n_layer, n_cross_layer):
         for value in (n_layer, n_cross_layer):

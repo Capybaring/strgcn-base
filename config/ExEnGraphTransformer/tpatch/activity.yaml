@@ -25,6 +25,8 @@ model_config:
     hid_dim: 32
     node_dim: 16
     n_layer: 4
+    # 0.375 seconds / 4 seconds; history is divided into 8 windows; shared stages execute once per chronological window.
+    rolling_window_size: 0.09375
     dropout: 0.3
     use_norm: true
     time_embedding_type: rbf

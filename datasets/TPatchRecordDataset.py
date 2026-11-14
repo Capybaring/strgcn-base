@@ -13,7 +13,7 @@ class TPatchRecordDataset(ExEnProcessedDataset):
 
     def long_collate_fn(self, batch):
         out = super().long_collate_fn(batch)
-        if self.pack_attention:
+        if self.pack_attention and self.rolling_window_size is None:
             from models.STRGCN.PackedAttention import pack_attention_plan
             out['batch_attention_plan'] = pack_attention_plan(out['batch_timestamp'],
                 out['batch_var_idx'], out['batch_node_type'], out['batch_pad_mask'].bool(),
@@ -61,4 +61,7 @@ class TPatchRecordDataset(ExEnProcessedDataset):
         origin = 0 if p['preserve_record_time'] else start
         sample = np.column_stack([(times - origin) / p['time_scale'], values, var, future])
         sample = sample[np.argsort(sample[:, 0], kind='stable')]
-        return torch.tensor(sample, dtype=torch.float32)
+        scale = p['time_scale']
+        return self._with_rolling_bounds(sample, (start - origin) / scale,
+            (start + p['history_native'] - origin) / scale,
+            (start + p['duration_native'] - origin) / scale)

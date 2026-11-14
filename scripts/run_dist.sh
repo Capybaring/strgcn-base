@@ -16,6 +16,9 @@ for model in "${models[@]}"; do
   if [[ -z "${RUN_TAG:-}" && -n "${TIME_LAYERS:-}${VARIABLE_LAYERS:-}${CROSS_LAYERS:-}${WITHIN_VARIABLES:-}" ]]; then
     tag="${tag}_t${TIME_LAYERS:-cfg}_v${VARIABLE_LAYERS:-cfg}_c${CROSS_LAYERS:-cfg}_${WITHIN_VARIABLES:-cfg}"
   fi
+  if [[ -z "${RUN_TAG:-}" && "$model" == ExEnGraphTransformer ]]; then
+    tag="${tag}_rolling_${ROLLING_WINDOW_SIZE:-cfg}"
+  fi
   command=("${PYTHON:-python}" -u main.py
     --config_path "config/${model}/processed/DIST.yaml"
     --model_save_dir_path "model_states/${tag}/${model}/DIST"
@@ -32,6 +35,9 @@ for model in "${models[@]}"; do
     [[ -z "${VARIABLE_LAYERS:-}" ]] || command+=(--variable-layers "$VARIABLE_LAYERS")
     [[ -z "${CROSS_LAYERS:-}" ]] || command+=(--cross-layers "$CROSS_LAYERS")
     [[ -z "${WITHIN_VARIABLES:-}" ]] || command+=(--within-variables "$WITHIN_VARIABLES")
+  fi
+  if [[ "$model" == ExEnGraphTransformer && -n "${ROLLING_WINDOW_SIZE:-}" ]]; then
+    command+=(--rolling-window-size "$ROLLING_WINDOW_SIZE")
   fi
   "${command[@]}"
 done

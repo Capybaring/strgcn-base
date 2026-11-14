@@ -218,7 +218,11 @@ class ExEn(nn.Module):
         sparse_plan = batch_attention_plan if batch_attention_plan is not None else (
             build_sparse_relations(tt, var_idx, types, valid) if self.relation_backend == "sparse_csr" else None)
         masks = relation_masks(tt, var_idx, types, valid) if sparse_plan is None and self.receiver_chunk_size is None else None
-        h = h0
+        h = self._run_graph_layers(h0, p, var_idx, valid, tt, types, sparse_plan, masks)
+        result = self.projection(self.lambda_ * h + (1 - self.lambda_) * h0)
+        return torch.where(valid.unsqueeze(-1), result, 0)
+
+    def _run_graph_layers(self, h, p, var_idx, valid, tt, types, sparse_plan, masks):
         for layer in self.temporal_layers:
             h = layer(h, p, var_idx, masks[:2] if masks is not None else None, valid,
                       tt, types, self.receiver_chunk_size, sparse_plan=sparse_plan)
@@ -226,5 +230,4 @@ class ExEn(nn.Module):
         for layer in self.cross_layers:
             h = layer(h, p, var_idx, masks[2:] if masks is not None else None, valid,
                       tt, types, self.receiver_chunk_size, sparse_plan=sparse_plan)
-        result = self.projection(self.lambda_ * h + (1 - self.lambda_) * h0)
-        return torch.where(valid.unsqueeze(-1), result, 0)
+        return h

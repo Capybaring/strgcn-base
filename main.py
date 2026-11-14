@@ -74,10 +74,25 @@ def main(args):
         if within is not None:
             model_config['model_params'].update(within_exogenous=within in ('both', 'exogenous'),
                                                 within_endogenous=within in ('both', 'endogenous'))
+    if getattr(args, 'rolling_window_size', None) is not None:
+        if model_config['model_name'] != 'ExEnGraphTransformer':
+            raise ValueError('--rolling-window-size requires ExEnGraphTransformer')
+        width = args.rolling_window_size
+        if not np.isfinite(width) or width < 0:
+            raise ValueError('--rolling-window-size must be finite and nonnegative')
+        model_config['model_params']['rolling_window_size'] = width or None
     if model_config['model_name'] == 'ExEnGraphTransformer':
         params = model_config['model_params']
         if not params.get('within_exogenous', True) and not params.get('within_endogenous', True):
             params['n_variable_layer'] = 0
+        if params.get('rolling_window_size') is not None:
+            if train_config.get('trainer_name') != 'TPatchForecastTrainer':
+                raise ValueError('Rolling graphs currently require TPatchForecastTrainer')
+            global_args['rolling_window_size'] = params['rolling_window_size']
+            global_args['rolling_within_relations'] = [r for r, enabled in (
+                (3, params.get('within_exogenous', True)), (4, params.get('within_endogenous', True)))
+                if enabled and params.get('n_variable_layer', 0) > 0]
+
     if model_config['model_name'] == 'ExEnGraphTransformer' and data_config['dataset_name'] == 'TPatchRecordDataset':
         params = model_config['model_params']
         data_config['dataset_params']['within_relations'] = [r for r, enabled in (
@@ -468,7 +483,16 @@ def main(args):
                              fusion_inputs=global_args['fusion_inputs']) if 'fusion_inputs' in global_args else None),
                 target_ids=packet['target_ids'],
                 checkpoint_attention=model_config['model_params'].get('checkpoint_attention'),
-                packed_attention=data_config['dataset_params'].get('pack_attention', False))
+                packed_attention=(data_config['dataset_params'].get('pack_attention', False) or
+                    model_config['model_params'].get('rolling_window_size') is not None),
+                rolling_windows=(dict(
+                    width_normalized=model_config['model_params']['rolling_window_size'],
+                    width_native=model_config['model_params']['rolling_window_size'] *
+                        (packet['time_scale'] if is_record else packet['duration_seconds']),
+                    forecast_origin_boundary=True, observation_memory='all_previous_known_fused_nodes',
+                    pattern_memory='ordered_causal_attention_over_known_observation_readouts',
+                    query_states_in_memory=False, detach_between_windows=False)
+                    if model_config['model_params'].get('rolling_window_size') is not None else None))
             protocol.update(target_names=[packet['names'][i] for i in packet['target_ids']],
                 exogenous_var_ids=sorted(train_dataset.exogenous_var_ids),
                 forecast_inputs=('Y_history_only' if not train_dataset.use_exogenous else
@@ -529,6 +553,8 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--device", default=None, help="Override configured device, e.g. cpu or cuda:0")
+    parser.add_argument('--rolling-window-size', type=float, default=None,
+                        help='Window width in normalized dataset time; 0 selects original global model')
     parser.add_argument('--time-layers', type=int, default=None)
     parser.add_argument('--variable-layers', type=int, default=None)
     parser.add_argument('--cross-layers', type=int, default=None)

@@ -27,10 +27,14 @@ if [[ "$include_dist" == 1 ]]; then
 fi
 for dataset in "${datasets[@]}"; do
   printf '\nRunning ExEnGraphTransformer: %s (NO_EXOGENOUS=%s)\n' "$dataset" "$no_exogenous"
+  dataset_tag="$run_tag"
+  if [[ "$dataset" == DIST ]]; then
+    dataset_tag="${dataset_tag}_rolling_${ROLLING_WINDOW_SIZE:-cfg}"
+  fi
   command=("$python_cmd" -u main.py
     --config_path "config/ExEnGraphTransformer/processed/${dataset}.yaml"
-    --model_save_dir_path "model_states/${run_tag}/${dataset}"
-    --result_save_dir_path "results/${run_tag}/${dataset}")
+    --model_save_dir_path "model_states/${dataset_tag}/${dataset}"
+    --result_save_dir_path "results/${dataset_tag}/${dataset}")
   if [[ -n "${ATTENTION_DTYPE:-}" ]]; then
     command+=(--attention-dtype "$ATTENTION_DTYPE")
   fi
@@ -44,5 +48,8 @@ for dataset in "${datasets[@]}"; do
   [[ -z "${VARIABLE_LAYERS:-}" ]] || command+=(--variable-layers "$VARIABLE_LAYERS")
   [[ -z "${CROSS_LAYERS:-}" ]] || command+=(--cross-layers "$CROSS_LAYERS")
   [[ -z "${WITHIN_VARIABLES:-}" ]] || command+=(--within-variables "$WITHIN_VARIABLES")
+  if [[ "$dataset" == DIST && -n "${ROLLING_WINDOW_SIZE:-}" ]]; then
+    command+=(--rolling-window-size "$ROLLING_WINDOW_SIZE")
+  fi
   "${command[@]}"
 done

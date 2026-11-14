@@ -22,9 +22,11 @@ class AttentionBucket:
 class PackedAttentionPlan:
     buckets: list
     within_relations: tuple = ()
+    windows: list | None = None
 
     def to(self, device, non_blocking=False):
-        return PackedAttentionPlan([b.to(device, non_blocking) for b in self.buckets], self.within_relations)
+        return PackedAttentionPlan([b.to(device, non_blocking) for b in self.buckets], self.within_relations,
+            None if self.windows is None else [w.to(device, non_blocking) for w in self.windows])
 
 
 def pack_attention_plan(timestamp, var_idx, node_type, valid, receiver_chunk=512,

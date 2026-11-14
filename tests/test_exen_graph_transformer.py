@@ -183,4 +183,5 @@ def test_runners_separate_modes_outputs_and_precision(tmp_path,no_x,include_dist
         assert p==f'config/ExEnGraphTransformer/processed/{name}.yaml'
         assert ('--no-exogenous' in command)==no_x
         assert command[command.index('--attention-dtype')+1]=='auto'
-        assert f'results/{tag}/{name}' in command
+        effective_tag = tag + '_rolling_cfg' if name == 'DIST' else tag
+        assert f'results/{effective_tag}/{name}' in command

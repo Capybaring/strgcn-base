@@ -12,6 +12,9 @@ tag="${RUN_TAG:-${model}_tpatch_v2_${mode}}"
 if [[ -z "${RUN_TAG:-}" && -n "${TIME_LAYERS:-}${VARIABLE_LAYERS:-}${CROSS_LAYERS:-}${WITHIN_VARIABLES:-}" ]]; then
   tag="${tag}_t${TIME_LAYERS:-cfg}_v${VARIABLE_LAYERS:-cfg}_c${CROSS_LAYERS:-cfg}_${WITHIN_VARIABLES:-cfg}"
 fi
+if [[ -z "${RUN_TAG:-}" && "$model" == ExEnGraphTransformer ]]; then
+  tag="${tag}_rolling_${ROLLING_WINDOW_SIZE:-cfg}"
+fi
 if (( $# == 0 )); then set -- mimic physionet activity ushcn; fi
 for dataset in "$@"; do
   case "$dataset" in mimic|physionet|activity|ushcn) ;; *) echo "Unknown dataset: $dataset" >&2; exit 2;; esac
@@ -31,5 +34,9 @@ for dataset in "$@"; do
   [[ -z "${VARIABLE_LAYERS:-}" ]] || command+=(--variable-layers "$VARIABLE_LAYERS")
   [[ -z "${CROSS_LAYERS:-}" ]] || command+=(--cross-layers "$CROSS_LAYERS")
   [[ -z "${WITHIN_VARIABLES:-}" ]] || command+=(--within-variables "$WITHIN_VARIABLES")
+  if [[ -n "${ROLLING_WINDOW_SIZE:-}" ]]; then
+    [[ "$model" == ExEnGraphTransformer ]] || { echo 'ROLLING_WINDOW_SIZE requires ExEnGraphTransformer' >&2; exit 2; }
+    command+=(--rolling-window-size "$ROLLING_WINDOW_SIZE")
+  fi
   "${command[@]}"
 done
