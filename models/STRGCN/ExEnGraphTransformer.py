@@ -115,7 +115,11 @@ class GraphAttentionLayer(nn.Module):
         return out[...,:self.head_dim].to(dtype)
 
     def forward(self,h,p,var_idx,masks,valid,timestamp=None,node_type=None,
-                receiver_chunk_size=None,sparse_plan=None,receiver_mask=None,window_state=None):
+                receiver_chunk_size=None,sparse_plan=None,receiver_mask=None,window_state=None,
+                window_layout=None,window_cache=None,window_time=None):
+        if window_layout is not None:
+            return self._forward_window(h, var_idx, valid, node_type, window_layout,
+                window_cache, window_time, window_state)
         plan=sparse_plan if sparse_plan is not None else build_sparse_relations(timestamp,var_idx,node_type,valid)
         if isinstance(plan, PackedAttentionPlan):
             return self._forward_packed(h, var_idx, valid, timestamp, node_type, plan, receiver_mask, window_state)
@@ -195,6 +199,87 @@ class GraphAttentionLayer(nn.Module):
         return self._select_receivers(out, h, valid, node_type, receiver_mask)
 
 
+    def _window_width(self):
+        width = self.head_dim
+        if self.use_time_bias:
+            width += self.time_embedding.hid_dim
+        if self.use_variable_bias:
+            width += self.adj_U.embedding_dim // self.num_heads
+        return math.ceil(width / 8) * 8
+
+    def _window_query(self, normalized, times, ids, index, state, batches):
+        n = normalized.shape[0]
+        content = self.q_proj[index](normalized)
+        content = content + self.window_query[index](state)[batches]
+        parts = [content.reshape(n, self.num_heads, self.head_dim) / math.sqrt(self.head_dim)]
+        if self.use_time_bias:
+            parts.append(times[:, None, :].expand(-1, self.num_heads, -1) *
+                         self.time_strength[index][None, :, None])
+        if self.use_variable_bias:
+            parts.append(self.adj_U(ids).reshape(n, self.num_heads, self.adj_U.embedding_dim // self.num_heads) *
+                         self.variable_strength[None, :, None])
+        q = torch.cat(parts, -1)
+        return F.pad(q, (0, self._window_width() - q.shape[-1]))
+
+    def _window_kv(self, normalized, times, ids, index):
+        n = normalized.shape[0]
+        key = self.k_proj[index](normalized).reshape(n, self.num_heads, self.head_dim)
+        value = self.v_proj[index](normalized).reshape(n, self.num_heads, self.head_dim)
+        parts = [key]
+        if self.use_time_bias:
+            parts.append(times[:, None, :].expand(-1, self.num_heads, -1))
+        if self.use_variable_bias:
+            parts.append(self.adj_V(ids).reshape(n, self.num_heads,
+                         self.adj_V.embedding_dim // self.num_heads))
+        key = torch.cat(parts, -1)
+        width = self._window_width()
+        return F.pad(key, (0, width - key.shape[-1])), F.pad(value, (0, width - value.shape[-1]))
+
+    def _cache_final_observations(self, h, times, ids):
+        # Keys/values depend on finalized observations and this layer's parameters,
+        # not the next window state (which affects Q only). Keep autograd attached.
+        normalized = self.norm_attention(h)
+        return [self._window_kv(normalized, times, ids, r) for r in range(len(self.q_proj))]
+
+    def _forward_window(self, h, ids, valid, types, layout, cache, times, state):
+        """Only current receivers and current known sources execute node networks."""
+        current = h[0]
+        normalized = self.norm_attention(current)
+        known_h, known_ids = normalized[layout.known], ids[0, layout.known]
+        known_time = times[layout.known] if times is not None else None
+        n, dim = current.shape
+        message = torch.zeros_like(current)
+        for index, relation in enumerate(self.relation_ids):
+            q = self._window_query(normalized, times, ids[0], index, state, layout.batch)
+            local_k, local_v = self._window_kv(known_h, known_time, known_ids, index)
+            chunks = cache[index]
+            k = torch.cat([entry[0] for entry in chunks] + [local_k], 0)
+            v = torch.cat([entry[1] for entry in chunks] + [local_v], 0)
+            value = current.new_zeros(n, dim)
+            active = torch.zeros(n, dtype=torch.bool, device=h.device)
+            for bucket in layout.plan.buckets:
+                if bucket.relation != relation:
+                    continue
+                qq = q[bucket.receiver].permute(0, 2, 1, 3)
+                kk = k[bucket.source].permute(0, 2, 1, 3)
+                vv = v[bucket.source].permute(0, 2, 1, 3)
+                def attend(q, k, v, degree=bucket.degrees):
+                    return self._attend(q, k, v, degree)
+                if self.checkpoint_attention and self.training and torch.is_grad_enabled():
+                    out = checkpoint(attend, qq, kk, vv, use_reentrant=False)
+                else:
+                    out = attend(qq, kk, vv)
+                out = out.transpose(1, 2).reshape(-1, dim)[bucket.positions]
+                value = value.index_add(0, bucket.destinations, out)
+                active[bucket.destinations] = True
+            zero = (q.sum() + k.sum() + v.sum()) * 0
+            projected = self.out_proj[index](value + zero)
+            message = message + torch.where(active[:, None], projected, 0)
+        out = current + self.dropout(message)
+        out = out + self.dropout(self.ffn(self.norm_ffn(out)))
+        return self._select_receivers(out[None], h, valid, types)
+
+
 class ExEnGraphTransformer(ExEn):
     """Time, optional within-role variable, and X-to-Y attention stages."""
     def __init__(self,*args,num_heads=2,ffn_multiplier=2,attention_backend='sdpa',
@@ -238,6 +323,10 @@ class ExEnGraphTransformer(ExEn):
             meta = [x.detach().cpu() for x in (tt, var_idx, types, valid)]
             sparse_plan = pack_rolling_attention_plan(*meta, self.rolling_window_size,
                 within_relations=self.within_relations).to(h.device)
+        return self._run_rolling_windows(h, p, var_idx, valid, tt, types, sparse_plan)
+
+    def _run_rolling_reference(self, h, p, var_idx, valid, tt, types, sparse_plan):
+        """Original full-tensor execution retained as a numerical test oracle."""
         tokens, token_valid = [], []
         for window in sparse_plan.windows:
             state = self.window_memory.predict(tokens, token_valid, window.bounds)
@@ -255,6 +344,51 @@ class ExEnGraphTransformer(ExEn):
             tokens.append(token)
             token_valid.append(window.present)
         return h
+
+
+    def _run_rolling_windows(self, h, p, var_idx, valid, tt, types, sparse_plan):
+        layers = [*self.temporal_layers, *self.variable_layers, *self.cross_layers]
+        flat_h = h.reshape(-1, h.shape[-1])
+        flat_t, flat_ids, flat_types = (x.reshape(-1) for x in (tt, var_idx, types))
+        # Timestamp-only features are invariant across windows; compute once/layer.
+        time_cache = {layer: time_features(layer.time_embedding, tt, valid).reshape(-1, h.shape[-1])
+                      if layer.use_time_bias else None for layer in layers}
+        kv_cache = {layer: [[] for _ in layer.relation_ids] for layer in layers}
+        tokens, token_valid, outputs, positions = [], [], [], []
+        for number, window in enumerate(sparse_plan.windows):
+            layout = window.layout
+            index = layout.current
+            ids, roles, times = flat_ids[index][None], flat_types[index][None], flat_t[index][None]
+            current = flat_h[index][None]
+            current_valid = torch.ones_like(ids, dtype=torch.bool)
+            state = self.window_memory.predict(tokens, token_valid, window.bounds)
+            stages = []
+            for block in (self.temporal_layers, self.variable_layers, self.cross_layers):
+                for layer in block:
+                    features = time_cache[layer]
+                    features = features[index] if features is not None else None
+                    current = layer(current, None, ids, None, current_valid, times, roles,
+                        sparse_plan=layout.plan, receiver_mask=current_valid, window_state=state,
+                        window_layout=layout, window_cache=kv_cache[layer], window_time=features)
+                stages.append(current)
+            outputs.append(current[0]); positions.append(index)
+            # Summaries are padded only to this window's observed count, never L.
+            selected = layout.summary
+            token = self.window_memory.summarize([stage[0, selected] for stage in stages],
+                times[0, selected], ids[0, selected], roles[0, selected],
+                layout.summary_valid, window.bounds)
+            tokens.append(token); token_valid.append(window.present)
+            if number + 1 < len(sparse_plan.windows):
+                known = layout.known
+                for layer in layers:
+                    features = time_cache[layer]
+                    features = features[index[known]] if features is not None else None
+                    entries = layer._cache_final_observations(current[0, known], features, ids[0, known])
+                    for history, entry in zip(kv_cache[layer], entries):
+                        history.append(entry)
+        if outputs:
+            flat_h = flat_h.index_copy(0, torch.cat(positions), torch.cat(outputs))
+        return flat_h.reshape_as(h)
 
 
     def _validate_depths(self, n_layer, n_cross_layer):

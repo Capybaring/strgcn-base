@@ -8,9 +8,49 @@ from dataclasses import dataclass
 import math
 import torch
 from torch import nn
-from .PackedAttention import PackedAttentionPlan, pack_attention_plan
+from .PackedAttention import AttentionBucket, PackedAttentionPlan, pack_attention_plan
 from .SparseRelations import RelationGroup, build_sparse_relations, build_within_variable_relations
 from .STRGCN_Layer import masked_softmax
+
+
+@dataclass
+class WindowLayout:
+    current: torch.Tensor
+    batch: torch.Tensor
+    known: torch.Tensor  # local positions of current observations
+    summary: torch.Tensor  # padded local positions, [B,max_current_observations]
+    summary_valid: torch.Tensor
+    plan: PackedAttentionPlan  # receiver/current and source/cache coordinates
+
+    def to(self, device, non_blocking=False):
+        return WindowLayout(*(x.to(device, non_blocking=non_blocking) for x in
+            (self.current, self.batch, self.known, self.summary, self.summary_valid)),
+            self.plan.to(device, non_blocking))
+
+
+def _compact_layout(plan, receivers, node_type, history):
+    """Compile indices on CPU; no CUDA nonzero or boolean-gather synchronization."""
+    current = torch.where(receivers.flatten())[0]
+    width = receivers.shape[1]
+    batches = current // width
+    known = torch.where(node_type.flatten()[current] != 3)[0]
+    sources = torch.cat((history, current[known]))
+    qmap = torch.zeros(receivers.numel(), dtype=torch.long)
+    smap = torch.zeros_like(qmap)
+    qmap[current] = torch.arange(len(current))
+    smap[sources] = torch.arange(len(sources))
+    buckets = [AttentionBucket(b.relation, smap[b.source], qmap[b.receiver],
+        b.degrees, b.positions, qmap[b.destinations]) for b in plan.buckets]
+    rows = [known[batches[known] == b] for b in range(len(receivers))]
+    length = max(map(len, rows), default=0)
+    summary = torch.zeros(len(rows), length, dtype=torch.long)
+    keep = torch.zeros_like(summary, dtype=torch.bool)
+    for b, row in enumerate(rows):
+        summary[b, :len(row)] = row
+        keep[b, :len(row)] = True
+    layout = WindowLayout(current, batches, known, summary, keep,
+        PackedAttentionPlan(buckets, plan.within_relations))
+    return layout, sources
 
 
 @dataclass
@@ -19,12 +59,14 @@ class WindowStep:
     receivers: torch.Tensor
     bounds: torch.Tensor  # [B,2], absolute normalized start/end
     present: torch.Tensor  # padded records must not add fictitious window tokens
+    layout: WindowLayout | None = None
 
     def to(self, device, non_blocking=False):
         return WindowStep(self.plan.to(device, non_blocking),
             self.receivers.to(device, non_blocking=non_blocking),
             self.bounds.to(device, non_blocking=non_blocking),
-            self.present.to(device, non_blocking=non_blocking))
+            self.present.to(device, non_blocking=non_blocking),
+            None if self.layout is None else self.layout.to(device, non_blocking))
 
 
 def _intervals(start, forecast, end, size):
@@ -80,8 +122,9 @@ def pack_rolling_attention_plan(timestamp, var_idx, node_type, valid, window_siz
         schedules.append(_intervals(start, origin, end, window_size))
     groups = build_sparse_relations(timestamp, var_idx, node_type, valid)
     groups += build_within_variable_relations(timestamp, var_idx, node_type, valid, within_relations)
-    windows = []
+    metadata = []
     coverage = torch.zeros_like(timestamp, dtype=torch.long)
+    window_ids = torch.full_like(node_type, -1, dtype=torch.long)
     for k in range(max(map(len, schedules), default=0)):
         receivers = torch.zeros_like(valid)
         edges = timestamp.new_zeros((len(schedules), 2))
@@ -94,19 +137,31 @@ def pack_rolling_attention_plan(timestamp, var_idx, node_type, valid, window_siz
                 receivers[b] = valid[b] & (timestamp[b] >= left) & upper
                 present[b] = True
         coverage += receivers.long()
-        local = []
-        for group in groups:
-            select = receivers[group.batch, group.receivers]
-            if select.any():
-                dst, degree = group.receivers[select], group.degrees[select]
-                local.append(RelationGroup(group.batch, group.relation,
-                    group.sources[:int(degree.max())], dst, degree))
+        window_ids[receivers] = k
+        metadata.append((receivers, edges, present))
+    if not torch.equal(coverage, valid.long()):
+        raise ValueError('Every valid node must belong to exactly one chronological window')
+    # Split each source group once, rather than rescanning every group K times.
+    # Python integer lists avoid many small CPU tensor reductions/indexing calls.
+    local_groups = [[] for _ in metadata]
+    for group in groups:
+        by_window = {}
+        for k, dst, degree in zip(window_ids[group.batch, group.receivers].tolist(),
+                                  group.receivers.tolist(), group.degrees.tolist()):
+            nodes, degrees = by_window.setdefault(k, ([], []))
+            nodes.append(dst); degrees.append(degree)
+        for k, (nodes, degrees) in by_window.items():
+            local_groups[k].append(RelationGroup(group.batch, group.relation,
+                group.sources[:max(degrees)], torch.tensor(nodes, dtype=torch.long),
+                torch.tensor(degrees, dtype=torch.long)))
+    windows = []
+    history = torch.empty(0, dtype=torch.long)
+    for (receivers, edges, present), local in zip(metadata, local_groups):
         plan = pack_attention_plan(timestamp, var_idx, node_type, valid,
             receiver_chunk=receiver_chunk, max_score_elements=max_score_elements,
             within_relations=within_relations, groups=local)
-        windows.append(WindowStep(plan, receivers, edges, present))
-    if not torch.equal(coverage, valid.long()):
-        raise ValueError('Every valid node must belong to exactly one chronological window')
+        layout, history = _compact_layout(plan, receivers, node_type, history)
+        windows.append(WindowStep(plan, receivers, edges, present, layout))
     return PackedAttentionPlan([], tuple(within_relations), windows)
 
 
@@ -156,7 +211,13 @@ class WindowPatternMemory(nn.Module):
         features = self.interactions(features) + self.variable(var_idx) + self.role(node_type)
         features = features + self.relative_time(relative.unsqueeze(-1))
         features = self.readout_norm(features)
-        weights = masked_softmax(self.readout_score(features).squeeze(-1), known, dim=-1)
+        scores = self.readout_score(features).squeeze(-1)
+        if known.shape[1] == 0:
+            # Empty tensor operations preserve explicit zero gradients, matching
+            # the reference even for optimizers with momentum/weight decay.
+            zero = (features.sum() + scores.sum()) * 0
+            return self.empty[None] + self._boundary(bounds) + zero
+        weights = masked_softmax(scores, known, dim=-1)
         token = (features * weights.unsqueeze(-1)).sum(1)
         token = torch.where(known.any(-1, keepdim=True), token, self.empty[None])
         return token + self._boundary(bounds)
