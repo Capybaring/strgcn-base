@@ -63,6 +63,13 @@ def main(args):
     train_config = config_all["train_config"]
     model_config = config_all["model_config"]
     data_config = config_all["data_config"]
+    profile_steps = getattr(args, 'profile_steps', 0)
+    if profile_steps < 0:
+        raise ValueError('--profile-steps must be nonnegative')
+    if profile_steps:
+        if train_config['trainer_name'] != 'TPatchForecastTrainer':
+            raise ValueError('--profile-steps requires TPatchForecastTrainer')
+        train_config['trainer_params']['profile_steps'] = profile_steps
     stage_overrides = {'n_layer': getattr(args, 'time_layers', None),
                        'n_variable_layer': getattr(args, 'variable_layers', None),
                        'n_cross_layer': getattr(args, 'cross_layers', None)}
@@ -553,6 +560,8 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--device", default=None, help="Override configured device, e.g. cpu or cuda:0")
+    parser.add_argument('--profile-steps', type=int, default=0,
+                        help='Print synchronized stage timing for first N training batches only')
     parser.add_argument('--rolling-window-size', type=float, default=None,
                         help='Window width in normalized dataset time; 0 selects original global model')
     parser.add_argument('--time-layers', type=int, default=None)

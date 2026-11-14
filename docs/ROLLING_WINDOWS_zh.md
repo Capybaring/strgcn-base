@@ -95,3 +95,23 @@ ROLLING_WINDOW_SIZE=0 DEVICE=cuda:0 bash scripts/run_tpatch_oracle.sh activity
 该合成检查约加速2.19倍，不是MIMIC GPU整轮测速。`tests/test_rolling_performance.py` 对照旧执行路径检查三种时间编码、两种注意力后端、checkpoint、padding、空窗口、输出、梯度、优化器状态及跨forward缓存隔离。GPU端没有新增每层nonzero/布尔筛选，紧凑索引由CPU collation构建。
 
 本轮最终回归：189项模型、梯度等价、数据与入口测试，以及DIST三模式的3项训练／导出检查通过，共192项。真实DIST完整首个任务（19,941节点、2,914查询、当前默认10窗）使用hid_dim=8、1+1+1层完成CPU前向、反向和参数更新；没有执行默认规模GPU整轮测速。
+
+## 批次构图与传输修正（2026-11-14）
+
+继续按MIMIC的变量数和批大小定位：CPU合成批次为32条记录、94变量（42个X）、每变量12个随机时间观测、16窗。cProfile中，上一版仅构图就约2.735秒，含539个注意力桶。优化后的相同规模构图约0.948秒；这是本机CPU合成测量，不能替代服务器真实数据或GPU整轮测速。
+
+此前每个窗口、每个桶分别构建和复制许多小张量。现在：
+
+- 用NumPy批量填充CPU索引桶，合并位置及目标索引的生成；不再为每个小分组反复创建Torch张量。
+- 完整计划树的元数据按dtype打包为连续存储，每种dtype只调用一次设备传输，再恢复各字段视图；常规计划为int64、bool、float32三次传输，而非数千次。共享张量去重，复制结果与原计划独立。
+- 模型、边集合、窗口宽度、损失和批大小不变。
+
+服务器可打印首5批的分段耗时：
+
+```bash
+PROFILE_STEPS=5 DEVICE=cuda:1 bash scripts/run_tpatch_oracle.sh mimic
+```
+
+输出`BATCH_TIMING`的单位是秒：`data`为主线程等待／准备下批数据与CPU构图，`transfer`为设备传输，`forward`包含前向和损失，`backward`为反向，`optimizer`为参数更新。仅首5个训练批次开启计时，不是只训练5批；CUDA计时会同步设备，因此这些批次有诊断开销，随后自动关闭。不设置`PROFILE_STEPS`则不新增CUDA同步。
+
+本轮验证：191项模型／数据／设备元数据／分段计时检查与3项DIST训练导出检查通过，共194项。尚无训练服务器上的实际GPU计时结果；请结合`BATCH_TIMING`评估剩余瓶颈。

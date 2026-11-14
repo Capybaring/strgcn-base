@@ -6,10 +6,11 @@ All times and window_size use the dataset's existing normalized time coordinate.
 """
 from dataclasses import dataclass
 import math
+import numpy as np
 import torch
 from torch import nn
-from .PackedAttention import AttentionBucket, PackedAttentionPlan, pack_attention_plan
-from .SparseRelations import RelationGroup, build_sparse_relations, build_within_variable_relations
+from .PackedAttention import AttentionBucket, PackedAttentionPlan, pack_attention_entries
+from .SparseRelations import build_sparse_relations, build_within_variable_relations
 from .STRGCN_Layer import masked_softmax
 
 
@@ -141,25 +142,23 @@ def pack_rolling_attention_plan(timestamp, var_idx, node_type, valid, window_siz
         metadata.append((receivers, edges, present))
     if not torch.equal(coverage, valid.long()):
         raise ValueError('Every valid node must belong to exactly one chronological window')
-    # Split each source group once, rather than rescanning every group K times.
-    # Python integer lists avoid many small CPU tensor reductions/indexing calls.
-    local_groups = [[] for _ in metadata]
+    # Split source groups with NumPy views; avoid constructing O(K*V*B)
+    # tiny torch tensors before copying their contents into buckets again.
+    local_entries = [[] for _ in metadata]
+    ids_array = window_ids.numpy()
+    width = timestamp.shape[1]
     for group in groups:
-        by_window = {}
-        for k, dst, degree in zip(window_ids[group.batch, group.receivers].tolist(),
-                                  group.receivers.tolist(), group.degrees.tolist()):
-            nodes, degrees = by_window.setdefault(k, ([], []))
-            nodes.append(dst); degrees.append(degree)
-        for k, (nodes, degrees) in by_window.items():
-            local_groups[k].append(RelationGroup(group.batch, group.relation,
-                group.sources[:max(degrees)], torch.tensor(nodes, dtype=torch.long),
-                torch.tensor(degrees, dtype=torch.long)))
+        nodes, degrees, source = (x.numpy() for x in (group.receivers, group.degrees, group.sources))
+        codes = ids_array[group.batch, nodes]
+        for k in np.unique(codes):
+            selected = codes == k
+            local_entries[int(k)].append((group.relation, group.batch * width,
+                source, nodes[selected], degrees[selected]))
     windows = []
     history = torch.empty(0, dtype=torch.long)
-    for (receivers, edges, present), local in zip(metadata, local_groups):
-        plan = pack_attention_plan(timestamp, var_idx, node_type, valid,
-            receiver_chunk=receiver_chunk, max_score_elements=max_score_elements,
-            within_relations=within_relations, groups=local)
+    for (receivers, edges, present), local in zip(metadata, local_entries):
+        plan = pack_attention_entries(local, receiver_chunk=receiver_chunk,
+            max_score_elements=max_score_elements, within_relations=within_relations)
         layout, history = _compact_layout(plan, receivers, node_type, history)
         windows.append(WindowStep(plan, receivers, edges, present, layout))
     return PackedAttentionPlan([], tuple(within_relations), windows)

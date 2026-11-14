@@ -1,5 +1,7 @@
 """MinMax/preprocessed-space, variable-macro metrics matching t-PatchGNN."""
 import warnings
+import json
+import time
 import numpy as np
 import torch
 from tqdm import tqdm
@@ -8,7 +10,10 @@ from utils.tpatch_evaluation import variable_error_sums, variable_macro_loss, su
 
 
 class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, profile_steps=0, **kwargs):
+        if not isinstance(profile_steps, int) or profile_steps < 0:
+            raise ValueError('profile_steps must be a nonnegative integer')
+        self._profile_remaining = profile_steps
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', message='do_inverse_scaling is False.*')
             super().__init__(*args, **kwargs)
@@ -32,18 +37,36 @@ class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
         self.model.train()
         total = 0.
         iterator = tqdm(data_loader)
+        previous = time.perf_counter()
         for raw in iterator:
+            profiling = self._profile_remaining > 0
+            arrived = time.perf_counter()
+            def stamp():
+                if torch.device(self.device).type == 'cuda':
+                    torch.cuda.synchronize(self.device)
+                return time.perf_counter()
             b = self._batch(raw)
+            copied = stamp() if profiling else 0.
             self.optimizer.zero_grad(set_to_none=True)
             prediction = self._predict(b)
             loss = variable_macro_loss(prediction, b['batch_value'],
                 b['batch_pred_mask'].bool() & b['batch_pad_mask'].bool(),
                 b['batch_var_idx'], self.global_args['num_of_vals'])
+            forwarded = stamp() if profiling else 0.
             loss.backward()
+            backwarded = stamp() if profiling else 0.
             self.optimizer.step()
+            stepped = stamp() if profiling else 0.
             value = loss.item()
             total += value
             iterator.set_description(f'loss is {value:.4f}')
+            if profiling:
+                print('BATCH_TIMING ' + json.dumps(dict(
+                    data=arrived - previous, transfer=copied - arrived,
+                    forward=forwarded - copied, backward=backwarded - forwarded,
+                    optimizer=stepped - backwarded, total=stepped - previous)), flush=True)
+                self._profile_remaining -= 1
+            previous = time.perf_counter()
         return total / len(data_loader)
 
     @torch.no_grad()

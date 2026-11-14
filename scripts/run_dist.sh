@@ -39,5 +39,6 @@ for model in "${models[@]}"; do
   if [[ "$model" == ExEnGraphTransformer && -n "${ROLLING_WINDOW_SIZE:-}" ]]; then
     command+=(--rolling-window-size "$ROLLING_WINDOW_SIZE")
   fi
+  [[ -z "${PROFILE_STEPS:-}" ]] || command+=(--profile-steps "$PROFILE_STEPS")
   "${command[@]}"
 done

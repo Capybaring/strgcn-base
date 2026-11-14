@@ -38,5 +38,6 @@ for dataset in "$@"; do
     [[ "$model" == ExEnGraphTransformer ]] || { echo 'ROLLING_WINDOW_SIZE requires ExEnGraphTransformer' >&2; exit 2; }
     command+=(--rolling-window-size "$ROLLING_WINDOW_SIZE")
   fi
+  [[ -z "${PROFILE_STEPS:-}" ]] || command+=(--profile-steps "$PROFILE_STEPS")
   "${command[@]}"
 done
