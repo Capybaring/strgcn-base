@@ -20,6 +20,7 @@ class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
         if self.do_inverse_scaling or self.enable_autocast or self.enable_distributed:
             raise ValueError('TPatch trainer uses supplied scaled values; full-model AMP and DDP are not supported')
         self.evaluation_history = []
+        self.epoch_train_seconds = []
 
     def _batch(self, batch):
         return {k: v.to(self.device, non_blocking=True) for k, v in batch.items()}
@@ -34,6 +35,9 @@ class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
                           **args).squeeze(-1)
 
     def train_one_epoch(self, data_loader):
+        if torch.device(self.device).type == "cuda":
+            torch.cuda.synchronize(self.device)
+        epoch_start = time.perf_counter()
         self.model.train()
         total = 0.
         iterator = tqdm(data_loader)
@@ -67,6 +71,9 @@ class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
                     optimizer=stepped - backwarded, total=stepped - previous)), flush=True)
                 self._profile_remaining -= 1
             previous = time.perf_counter()
+        if torch.device(self.device).type == "cuda":
+            torch.cuda.synchronize(self.device)
+        self.epoch_train_seconds.append(time.perf_counter() - epoch_start)
         return total / len(data_loader)
 
     @torch.no_grad()

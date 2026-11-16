@@ -251,7 +251,7 @@ class tPatchGNN(nn.Module):
 
 		return x
 
-	def forecasting(self, time_steps_to_predict, X, truth_time_steps, mask = None):
+	def encode_queries(self, time_steps_to_predict, X, truth_time_steps, mask = None):
 
 		"""
 		time_steps_to_predict (B, L) [0, 1]
@@ -287,6 +287,10 @@ class tPatchGNN(nn.Module):
 		h = torch.cat([h, te_pred], dim=-1) # (B, N, Lp, F)
 
 		# (B, N, Lp, F) -> (B, N, Lp, 1) -> (1, B, Lp, N)
+		return h
+
+	def forecasting(self, time_steps_to_predict, X, truth_time_steps, mask=None):
+		h = self.encode_queries(time_steps_to_predict, X, truth_time_steps, mask)
 		outputs = self.decoder(h).squeeze(dim=-1).permute(0, 2, 1).unsqueeze(dim=0)
 
 		return outputs # (1, B, Lp, N)

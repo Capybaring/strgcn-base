@@ -7,6 +7,9 @@ from .STRGCN.ExEnGraphTransformer import ExEnGraphTransformer
 
 
 def __getattr__(name):
+    if name in ('TPatchQueryFusion', 'HiPatchQueryFusion'):
+        from .exogenous import adapter
+        return getattr(adapter, name)
     if name in ('TPatchGNNFusion', 'HiPatchFusion'):
         from baseline.patch_fusion import adapter
         return getattr(adapter, name)

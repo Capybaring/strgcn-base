@@ -1,3 +1,4 @@
+from .QueryFusionDataset import QueryFusionDataset
 from .TPatchFusionDataset import TPatchFusionDataset
 from .TPatchRecordDataset import TPatchRecordDataset
 from .ExEnProcessedDataset import ExEnProcessedDataset

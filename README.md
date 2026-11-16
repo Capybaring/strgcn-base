@@ -208,3 +208,11 @@ BACKBONE=hipatch MODE=NoExo DEVICE=cuda:0 bash scripts/run_patch_fusion.sh activ
 ExEnGraphTransformer, TPatchGNNFusion and HiPatchFusion now support DIST with train-only MinMax and global variable-macro MSE/MAE/RMSE. Run all three with `DEVICE=cuda:0 bash scripts/run_dist.sh`. See [DIST instructions](docs/DIST_FORECAST_zh.md) for individual models and FullExo/HistExo/NoExo modes. Other processed datasets retain their existing evaluation configs.
 
 Within-role X→X and Y→Y attention can be ablated independently. See [module controls](docs/WITHIN_VARIABLE_ATTENTION_zh.md).
+
+## Direction B: reusable query-feature exogenous fusion
+
+`TPatchQueryFusion` and `HiPatchQueryFusion` retain their historical encoders and
+original decoders, with a shared V1 cross-time XY attention plugin and V2
+history-conditioned lag transfer. Isolated configs, the experiment matrix,
+protocol differences and validation limits are documented in
+[方向 B 实施说明](docs/DIRECTION_B_zh.md). Existing MLP baselines are retained.

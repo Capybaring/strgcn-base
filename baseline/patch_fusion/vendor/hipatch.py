@@ -379,7 +379,7 @@ class Hi_Patch(nn.Module):
             x_time = avg_x_time
         return x.reshape(self.batch_size, self.N, self.hid_dim)
 
-    def forecasting(self, time_steps_to_predict, X, truth_time_steps, mask=None):
+    def encode_queries(self, time_steps_to_predict, X, truth_time_steps, mask=None):
         B, M, L_in, N = X.shape
         self.batch_size = B
         X = X.permute(0, 3, 1, 2).unsqueeze(-1)
@@ -400,6 +400,10 @@ class Hi_Patch(nn.Module):
 
         h = torch.cat([h, te_pred], dim=-1)
 
+        return h
+
+    def forecasting(self, time_steps_to_predict, X, truth_time_steps, mask=None):
+        h = self.encode_queries(time_steps_to_predict, X, truth_time_steps, mask)
         outputs = self.decoder(h).squeeze(dim=-1).permute(0, 2, 1).unsqueeze(dim=0)
 
         return outputs

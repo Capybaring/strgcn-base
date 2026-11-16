@@ -383,7 +383,7 @@ def main(args):
         # save y_pred, y_true to self.result_save_dir/y_pred.npy, y_true.npy
         np.save(os.path.join(result_save_dir_path, "test_y_pred.npy"), y_pred)
         np.save(os.path.join(result_save_dir_path, "test_y_true.npy"), y_true)
-        if model_config["model_name"] in ("ExEn", "STRGCNDirect", "ExEnAligned", "ExEnGraphTransformer", "TPatchGNNFusion", "HiPatchFusion"):
+        if model_config["model_name"] in ("ExEn", "STRGCNDirect", "ExEnAligned", "ExEnGraphTransformer", "TPatchGNNFusion", "HiPatchFusion", "TPatchQueryFusion", "HiPatchQueryFusion"):
             np.save(os.path.join(result_save_dir_path, "test_y_mask.npy"), trainer.last_eval_mask)
             np.save(os.path.join(result_save_dir_path, "test_var_idx.npy"), trainer.last_eval_var_idx)
         if evaluation_scaler is not None:
@@ -485,7 +485,7 @@ def main(args):
                 input_scaler_unseen_variable_ids=getattr(scaler, 'unseen_variable_ids', []),
                 batch_size=batch_size, model_name=model_config['model_name'],
                 model_parameters=model_config['model_params'],
-                fusion=(dict(module='DAG two-layer pointwise MLP, no residual',
+                fusion=(dict(global_args['query_fusion_protocol']) if 'query_fusion_protocol' in global_args else dict(module='DAG two-layer pointwise MLP, no residual',
                              future_fill=global_args['fusion_future_fill'],
                              fusion_inputs=global_args['fusion_inputs']) if 'fusion_inputs' in global_args else None),
                 target_ids=packet['target_ids'],
@@ -514,7 +514,9 @@ def main(args):
                 json.dump(protocol, f, indent=2, ensure_ascii=False, allow_nan=False)
             with open(os.path.join(result_save_dir_path, 'metrics.json'), 'w') as f:
                 json.dump(dict(best_validation=best_eval_result, test=test_result,
-                    training_history=trainer.evaluation_history[:-1], protocol=protocol),
+                    training_history=trainer.evaluation_history[:-1], protocol=protocol,
+                    parameter_count=sum(p.numel() for p in model.parameters()),
+                    epoch_train_seconds=trainer.epoch_train_seconds),
                     f, indent=2, ensure_ascii=False, allow_nan=False)
 
 
