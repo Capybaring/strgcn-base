@@ -1,0 +1,120 @@
+{
+  "date": "2026-11-16",
+  "implementation_commit": "889243ef0fd32014a8cb8441564287fa79be79b7",
+  "baseline_commit": "22fa20e83e3a84ed6c6970f2cbbd6668d391182e",
+  "branch": "feat/direction-b-query-fusion-20261116",
+  "tests": {
+    "total": 357,
+    "passed": 357,
+    "warnings": 55,
+    "new_query_tests": 62,
+    "seconds": 87.43
+  },
+  "environment": {
+    "python": "3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]",
+    "torch": "2.15.0",
+    "cuda": false,
+    "mps": false,
+    "hipatch": "repository sum-message fallback"
+  },
+  "diagnostic": {
+    "matrix_runs": 72,
+    "default_structure_runs": 16,
+    "all_exit_zero": true,
+    "samples_per_split": 2,
+    "epochs": 1,
+    "seeds": [
+      3407
+    ],
+    "small_model_matrix": true,
+    "formal_performance_conclusion": false
+  },
+  "matched_tasks": [
+    {
+      "backbone": "TPatchQueryFusion",
+      "dataset": "activity",
+      "identical_test_tasks_across_nine_variants": true,
+      "v1_equals_no_transfer_exactly": true
+    },
+    {
+      "backbone": "TPatchQueryFusion",
+      "dataset": "ushcn",
+      "identical_test_tasks_across_nine_variants": true,
+      "v1_equals_no_transfer_exactly": true
+    },
+    {
+      "backbone": "TPatchQueryFusion",
+      "dataset": "mimic",
+      "identical_test_tasks_across_nine_variants": true,
+      "v1_equals_no_transfer_exactly": true
+    },
+    {
+      "backbone": "TPatchQueryFusion",
+      "dataset": "physionet",
+      "identical_test_tasks_across_nine_variants": true,
+      "v1_equals_no_transfer_exactly": true
+    },
+    {
+      "backbone": "HiPatchQueryFusion",
+      "dataset": "activity",
+      "identical_test_tasks_across_nine_variants": true,
+      "v1_equals_no_transfer_exactly": true
+    },
+    {
+      "backbone": "HiPatchQueryFusion",
+      "dataset": "ushcn",
+      "identical_test_tasks_across_nine_variants": true,
+      "v1_equals_no_transfer_exactly": true
+    },
+    {
+      "backbone": "HiPatchQueryFusion",
+      "dataset": "mimic",
+      "identical_test_tasks_across_nine_variants": true,
+      "v1_equals_no_transfer_exactly": true
+    },
+    {
+      "backbone": "HiPatchQueryFusion",
+      "dataset": "physionet",
+      "identical_test_tasks_across_nine_variants": true,
+      "v1_equals_no_transfer_exactly": true
+    }
+  ],
+  "formal_plan": {
+    "runs": 216,
+    "executed": false,
+    "path": "results/direction_b_formal_plan_20261116"
+  },
+  "source_sha256": {
+    "README.md": "0cafd2fce848b2ee2acdf64fdb17326cd379de5ca1d109f81f1d4ee18db0dfee",
+    "baseline/patch_fusion/vendor/PROVENANCE.json": "6346a7c1c7b17296dcb50b2ae5e5636a6265cdc624298977ac0f4aea795a320c",
+    "baseline/patch_fusion/vendor/hipatch.py": "47c4a2a7a3577031e65ac8b6e4349cae92024a9e40959f52385771ff8df333b9",
+    "baseline/patch_fusion/vendor/tpatchgnn.py": "b1bfb268d83b5ff7ae7ac1bdcb16fa960c1387eca5fb6a84ca84381b85aed361",
+    "config/HiPatchQueryFusion/tpatch/activity.yaml": "73a420c4cdf813680734d39b8674eeb74ec510910acf8650ea1fcd9f30392d3f",
+    "config/HiPatchQueryFusion/tpatch/mimic.yaml": "ea06d37198ef9e55cf5856ec0b630eb7ea11503dd48e1986bc11e03cb56fa953",
+    "config/HiPatchQueryFusion/tpatch/physionet.yaml": "0c267facc69a9423334ee24e37e8ee5fedb5f157e30a7f3f013eae7570e75327",
+    "config/HiPatchQueryFusion/tpatch/ushcn.yaml": "fdec753f1f49f2d4cb684246553a897ccc621b773e46c51270868cf1449f8db2",
+    "config/TPatchQueryFusion/tpatch/activity.yaml": "987b550d663b466ce3fbedfcc5d33e5e5e37009819a50bc302d476de08b8a52e",
+    "config/TPatchQueryFusion/tpatch/mimic.yaml": "d550e9073bb074ebddeec8508a18b5703fc6b77aef4f8b8b794c7737cd6f2cbf",
+    "config/TPatchQueryFusion/tpatch/physionet.yaml": "80a319f8fee6082bf9657f0c02f2f9539273b92e85a96ff02ec5e50f988352d2",
+    "config/TPatchQueryFusion/tpatch/ushcn.yaml": "4321689ecc9f02ca104cd47f1c994cb3ace128cffdfc09e7e8746786d687fec0",
+    "datasets/QueryFusionDataset.py": "9a676c91e277ebb1b28e1eb26217f6748c35061a5b8c64535e198b09de28eaad",
+    "datasets/__init__.py": "a1364bc05beb5dabae144d4a13b55f80377720812a93ab34977182b15f2e15f7",
+    "docs/DIRECTION_B_zh.md": "459b2a822b4de643ad7eed8d59979261d77bbbc0643336abbb409e7f4514c099",
+    "main.py": "f1196f1279d36c29a2068135c2046bef6733f408d24a0279fb3691cf9e146bf9",
+    "models/__init__.py": "f163f4bb7ac6ca6dda0f46f0aea85753e17d7375d7818ce323b15a58f66bc7ac",
+    "models/exogenous/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "models/exogenous/adapter.py": "00f4806f2bdb39916dc57c052e1524882b2ed6e4499dc94a809ce1ff8c81f0ff",
+    "models/exogenous/fusion.py": "9faf35c5d5fc474b4f2bd2a5c88c8abb8cbebfff00aefa0fcc699963441aa434",
+    "requirements-query-tested.txt": "b6c859703ad461d1c038df414d69cdf2b5a1c4bacd8499b74de3d0202bb21a6c",
+    "scripts/run_query_fusion.py": "10b2bd87fb30c1cbd964aa1fe3131a502e4aa57a6e673342c25953f68d0981c6",
+    "tests/test_query_fusion.py": "5f8810f667f2aff4f1b64eb6fb6ece974a27a454a04eb2524b9efd6f9e945b0e",
+    "trainers/TPatchForecastTrainer.py": "921d6b4639d6b96130c3717ecaba2c83cd58a02cfe74fd69046957d1f409dd8d"
+  },
+  "original_repository_status": "?? docs/GRAPH_TRANSFORMER_GRID_zh.md\n?? reports/processed_data_audit.json\n?? scripts/grid_search_exen_graph_transformer.py\n?? tests/test_graph_transformer_grid.py\n",
+  "limitations": [
+    "No full-data, default-budget multi-seed accuracy evaluation yet",
+    "No CUDA or native PyG execution",
+    "V2 lag state is window-conditioned by target/head, pooling X variables; no recurrent time-indexed state",
+    "Quadratic historical pair attention remains a scaling limit; receiver chunking bounds each block, not total training activations"
+  ]
+}
