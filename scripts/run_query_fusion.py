@@ -59,6 +59,11 @@ def main():
         help="diagnostic only; hidden=8, one encoder layer",
     )
     p.add_argument("--plan-only", action="store_true")
+    p.add_argument(
+        "--stream-logs",
+        action="store_true",
+        help="Display training progress while saving the same output to run.log",
+    )
     a = p.parse_args()
     out = a.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
@@ -131,27 +136,44 @@ def main():
                     ]
                     start = time.perf_counter()
                     with (run / "run.log").open("w") as log:
-                        result = subprocess.run(
-                            cmd,
-                            cwd=ROOT,
-                            stdout=log,
-                            stderr=subprocess.STDOUT,
-                            env={
-                                **os.environ,
-                                "OMP_NUM_THREADS": "1",
-                                "MKL_NUM_THREADS": "1",
-                            },
-                        )
+                        env = {
+                            **os.environ,
+                            "OMP_NUM_THREADS": "1",
+                            "MKL_NUM_THREADS": "1",
+                        }
+                        if a.stream_logs:
+                            with subprocess.Popen(
+                                cmd,
+                                cwd=ROOT,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                env=env,
+                                text=True,
+                                bufsize=1,
+                            ) as process:
+                                for line in process.stdout:
+                                    log.write(line)
+                                    log.flush()
+                                    print(line, end="", flush=True)
+                                returncode = process.wait()
+                        else:
+                            returncode = subprocess.run(
+                                cmd,
+                                cwd=ROOT,
+                                stdout=log,
+                                stderr=subprocess.STDOUT,
+                                env=env,
+                            ).returncode
                     elapsed = time.perf_counter() - start
                     row = dict(
                         backbone=backbone,
                         dataset=dataset,
                         seed=seed,
                         variant=variant,
-                        exit_code=result.returncode,
+                        exit_code=returncode,
                         wall_seconds=elapsed,
                     )
-                    if result.returncode == 0:
+                    if returncode == 0:
                         metrics = json.loads((run / "results/metrics.json").read_text())
                         row.update(
                             mse=metrics["test"]["mse"],

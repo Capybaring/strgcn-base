@@ -216,3 +216,14 @@ original decoders, with a shared V1 cross-time XY attention plugin and V2
 history-conditioned lag transfer. Isolated configs, the experiment matrix,
 protocol differences and validation limits are documented in
 [方向 B 实施说明](docs/DIRECTION_B_zh.md). Existing MLP baselines are retained.
+
+Run one experiment on GPU 0 with the existing `data/tpatch-data` directory:
+
+```bash
+bash scripts/run_query_fusion.sh                         # t-PatchGNN / Activity / base
+bash scripts/run_query_fusion.sh tpatchgnn activity v1   # one V1 experiment
+bash scripts/run_query_fusion.sh hipatch ushcn v2        # one Hi-Patch / USHCN / V2 experiment
+```
+
+Choose one command per run. The shell entry always uses one fixed seed (3407),
+streams progress to the terminal, and creates a fresh result directory.

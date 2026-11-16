@@ -237,9 +237,11 @@ def test_cli_matrix_exports_and_refuses_existing_output(tmp_path):
         "--max-samples-per-split",
         "2",
         "--small-model",
+        "--stream-logs",
     ]
     run = subprocess.run(cmd, cwd=root, capture_output=True, text=True, timeout=120)
     assert run.returncode == 0, run.stdout + run.stderr
+    assert "Start training." in run.stdout
     rows = json.loads((output / "summary.json").read_text())
     assert len(rows) == 4
     assert all(
@@ -247,6 +249,7 @@ def test_cli_matrix_exports_and_refuses_existing_output(tmp_path):
         for row in rows
     )
     for path in output.glob("*/activity/3407/*/results"):
+        assert "Start training." in (path.parent / "run.log").read_text()
         metrics = json.loads((path / "metrics.json").read_text())
         assert metrics["protocol"]["fusion"]["mode"] in ("v1", "v2")
         for name in (

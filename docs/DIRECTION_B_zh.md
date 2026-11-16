@@ -2,7 +2,35 @@
 
 ## 仓库核查与实施顺序
 
-起点为 GitHub `master` 的 `22fa20e83e3a84ed6c6970f2cbbd6668d391182e`（2026-11-16 核对远端 HEAD）。原工作目录有四个未跟踪网格搜索/审计文件，保持原样。实现位于独立本地 clone `strgcn-direction-b`，分支 `feat/direction-b-query-fusion-20261116`。没有改写原仓库、sources、原始数据、已有模型或结果，没有推送远端。
+起点为 GitHub `master` 的 `22fa20e83e3a84ed6c6970f2cbbd6668d391182e`（2026-11-16 核对远端 HEAD）。最初按要求在独立开发分支实现；现按用户最新要求将实现同步到原 `master`，后续直接在原分支维护，不新增分支。原工作目录的四个未跟踪网格搜索/审计文件，以及 sources、原始数据和已有模型/结果保持原样。
+
+## 服务器单次运行入口
+
+在原仓库目录更新 `master` 后直接运行：
+
+```bash
+cd /home/ybhuo/hq/STRGCN
+git pull --ff-only origin master
+bash scripts/run_query_fusion.sh
+```
+
+默认只运行 **t-PatchGNN + Activity + base** 一次，固定随机种子3407，GPU 0，完整数据和默认模型结构，最多30轮/5轮早停。数据默认从当前仓库的 `data/tpatch-data` 读取。进度实时显示在终端，同时保存日志；每次创建带时间和进程号的新结果目录，结束时显示指标和保存位置。
+
+每次指定一个基座、一个数据集、一个方法：
+
+```bash
+bash scripts/run_query_fusion.sh tpatchgnn activity base
+bash scripts/run_query_fusion.sh tpatchgnn activity mlp
+bash scripts/run_query_fusion.sh tpatchgnn activity cross
+bash scripts/run_query_fusion.sh tpatchgnn activity v1
+bash scripts/run_query_fusion.sh tpatchgnn activity v2
+# 换用 Hi-Patch 或另一个数据集，同样只运行一次：
+bash scripts/run_query_fusion.sh hipatch ushcn v1
+```
+
+支持的数据集：`activity mimic physionet ushcn`。额外消融方法：`v2_static v2_no_transfer v1_no_time v1_no_variable`。不要一次粘贴执行全部示例；按实际要运行的组合逐条执行。
+
+可选设置如 `GPU=2 bash scripts/run_query_fusion.sh tpatchgnn activity v1`；其他数据路径可用 `TPATCH_DATA_ROOT=/path/to/tpatch-data` 指定。`DRY_RUN=1` 仅生成本次配置，不训练。原 Python 矩阵入口保留供后续评估使用，当前以本节单次入口为准，不执行多种子矩阵。
 
 核查发现：
 
@@ -12,7 +40,7 @@
 - 四组 `.pt` 数据在本机可读，使用既有 `/private/tmp/tpatch-real-check` 只读链接。新运行不在数据目录写缓存。
 - 当前测试环境只有 CPU，CUDA/MPS 均不可用；Hi-Patch 使用仓库既有 sum 消息聚合兼容实现，尚未验证原生 PyG 后端和 GPU 显存。
 
-实施顺序：先锁定数据协议与原预测路径等价性；提取两个 `encode_queries`；实现共享 V1；以同一插件接入两个基座；增加 V2 和静态/无迁移消融；运行隔离测试、完整回归和真实数据诊断；最后进行默认规模、多种子的正式训练。最后一步尚未完成，不能将诊断分数作为精度结论。
+实施顺序：先锁定数据协议与原预测路径等价性；提取两个 `encode_queries`；实现共享 V1；以同一插件接入两个基座；增加 V2 和静态/无迁移消融；运行隔离测试、完整回归和真实数据诊断；最后逐个模型、数据集和方法进行正式训练，暂时固定一个种子。最后一步尚未完成，不能将诊断分数作为精度结论。
 
 ## 接口
 
