@@ -40,4 +40,3 @@ if [[ "${DRY_RUN:-0}" == 1 ]]; then command+=(--plan-only); fi
 printf 'mTAN/mTAND: activity -> mimic -> physionet -> ushcn; base -> mlp -> v1 for each dataset.\n'
 printf '12 sequential runs, fixed seed 3407. Output: %s\n' "$output"
 exec "${command[@]}"
-

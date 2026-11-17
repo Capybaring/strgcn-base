@@ -58,4 +58,3 @@ train_config:
     eval_metric_min_is_best: true
     enable_autocast: false
     do_inverse_scaling: false
-
