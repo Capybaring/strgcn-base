@@ -110,14 +110,14 @@ def main(args):
             raise ValueError('--attention-dtype requires ExEnGraphTransformer')
         model_config['model_params']['attention_dtype']=args.attention_dtype
     if getattr(args, 'no_exogenous', False):
-        if data_config['dataset_name'] not in ('ExEnProcessedDataset', 'TPatchRecordDataset', 'TPatchFusionDataset'):
+        if data_config['dataset_name'] not in ('ExEnProcessedDataset', 'TPatchRecordDataset', 'TPatchFusionDataset', 'QueryFusionDataset', 'MTANQueryDataset'):
             raise ValueError('--no-exogenous requires a role-aware processed or tpatch dataset')
         data_config['dataset_params'] = dict(data_config.get('dataset_params', {}), use_exogenous=False)
 
     if getattr(args, 'history_only_exogenous', False):
         if getattr(args, 'no_exogenous', False):
             raise ValueError('Choose either --no-exogenous or --history-only-exogenous')
-        if data_config['dataset_name'] not in ('ExEnProcessedDataset', 'TPatchRecordDataset', 'TPatchFusionDataset'):
+        if data_config['dataset_name'] not in ('ExEnProcessedDataset', 'TPatchRecordDataset', 'TPatchFusionDataset', 'QueryFusionDataset', 'MTANQueryDataset'):
             raise ValueError('History-only X requires a role-aware dataset')
         data_config['dataset_params'] = dict(data_config.get('dataset_params', {}), known_future_exogenous_var_ids=[])
 
@@ -383,7 +383,7 @@ def main(args):
         # save y_pred, y_true to self.result_save_dir/y_pred.npy, y_true.npy
         np.save(os.path.join(result_save_dir_path, "test_y_pred.npy"), y_pred)
         np.save(os.path.join(result_save_dir_path, "test_y_true.npy"), y_true)
-        if model_config["model_name"] in ("ExEn", "STRGCNDirect", "ExEnAligned", "ExEnGraphTransformer", "TPatchGNNFusion", "HiPatchFusion", "TPatchQueryFusion", "HiPatchQueryFusion"):
+        if model_config["model_name"] in ("ExEn", "STRGCNDirect", "ExEnAligned", "ExEnGraphTransformer", "TPatchGNNFusion", "HiPatchFusion", "TPatchQueryFusion", "HiPatchQueryFusion", "MTANQueryFusion"):
             np.save(os.path.join(result_save_dir_path, "test_y_mask.npy"), trainer.last_eval_mask)
             np.save(os.path.join(result_save_dir_path, "test_var_idx.npy"), trainer.last_eval_var_idx)
         if evaluation_scaler is not None:

@@ -7,6 +7,9 @@ from .STRGCN.ExEnGraphTransformer import ExEnGraphTransformer
 
 
 def __getattr__(name):
+    if name == 'MTANQueryFusion':
+        from .exogenous.mtan_adapter import MTANQueryFusion
+        return MTANQueryFusion
     if name in ('TPatchQueryFusion', 'HiPatchQueryFusion'):
         from .exogenous import adapter
         return getattr(adapter, name)

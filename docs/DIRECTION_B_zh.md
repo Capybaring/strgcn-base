@@ -40,6 +40,8 @@ bash scripts/run_hipatch_base_mlp_v1.sh
 
 该入口在同一 GPU 上依次运行 Activity、MIMIC、PhysioNet、USHCN，每个数据集按 base、mlp、v1 的顺序训练，共12次，固定种子3407，完整数据，最多30轮和5轮早停。进度实时显示，每次调用生成新的输出根目录；根目录的 `summary.json` 随运行更新，全部结束后生成 `summary.csv`。某次训练正常返回非零退出码后，矩阵入口记录失败并继续下一组，最终返回非零状态；终端被中断时不会自动续跑。可用 `GPU=2` 指定显卡，或用 `DRY_RUN=1` 仅生成12组配置。
 
+mTAN/mTAND 对应入口为 `bash scripts/run_mtand_base_mlp_v1.sh`，同样一次运行四个数据集的 base/mlp/v1 共12组。单次可用 `bash scripts/run_query_fusion.sh mtand activity v1`。该基座采用官方变分编码—解码器，训练保留一次潜变量采样和KL正则，评估使用潜变量均值；目标为现有宏平均预测MSE加0.001倍KL，并非原论文插值任务的完整IWAE目标。接口、固定源码及具体边界见 [mTAN说明](../baseline/mtan/README.md)。
+
 核查发现：
 
 - `baseline/patch_fusion/adapter.py` 的现有两个 Fusion 模型先输出标量预测，再做 DAG 两层 MLP；它们不是查询特征级融合。

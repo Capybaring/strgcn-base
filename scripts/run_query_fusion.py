@@ -39,7 +39,7 @@ def main():
     p.add_argument(
         "--backbones",
         nargs="+",
-        choices=["TPatchQueryFusion", "HiPatchQueryFusion"],
+        choices=["TPatchQueryFusion", "HiPatchQueryFusion", "MTANQueryFusion"],
         default=["TPatchQueryFusion", "HiPatchQueryFusion"],
     )
     p.add_argument(
@@ -107,13 +107,16 @@ def main():
                         dp["known_future_exogenous_var_ids"] = []
                     c["model_config"]["model_params"].update(VARIANTS[variant])
                     if a.small_model:
-                        c["model_config"]["model_params"].update(
-                            hid_dim=8,
-                            n_layer=1,
-                            n_heads=1,
-                            plugin_hidden=8,
-                            plugin_heads=2,
+                        small = dict(
+                            hid_dim=8, n_heads=1, plugin_hidden=8, plugin_heads=2
                         )
+                        if backbone == "MTANQueryFusion":
+                            small.update(
+                                latent_dim=4, gen_hidden=8, te_dim=8, num_ref_points=8
+                            )
+                        else:
+                            small["n_layer"] = 1
+                        c["model_config"]["model_params"].update(small)
                         c["train_config"]["batch_size"] = 2
                     c["train_config"]["random_seed"] = seed
                     c["train_config"]["trainer_params"]["max_epoch_num"] = a.epochs

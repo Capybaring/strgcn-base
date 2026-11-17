@@ -227,3 +227,14 @@ bash scripts/run_query_fusion.sh hipatch ushcn v2        # one Hi-Patch / USHCN 
 
 Choose one command per run. The shell entry always uses one fixed seed (3407),
 streams progress to the terminal, and creates a fresh result directory.
+
+mTAN/mTAND is also supported through its official variational encoder/decoder,
+adapted to future forecasting with shared query-level fusion:
+
+```bash
+bash scripts/run_query_fusion.sh mtand activity v1
+bash scripts/run_mtand_base_mlp_v1.sh  # four datasets x base/mlp/v1, 12 sequential runs
+```
+
+See [mTAN provenance, objective, and interface](baseline/mtan/README.md). This is a
+forecasting adaptation, not a reproduction of the original interpolation scores.

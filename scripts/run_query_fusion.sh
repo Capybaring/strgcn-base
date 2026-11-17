@@ -9,7 +9,7 @@ set -euo pipefail
 
 if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
   printf '%s\n' \
-    'Usage: bash scripts/run_query_fusion.sh [tpatchgnn|hipatch] [dataset] [method]' \
+    'Usage: bash scripts/run_query_fusion.sh [tpatchgnn|hipatch|mtand] [dataset] [method]' \
     'Defaults: tpatchgnn activity base' \
     'Datasets: activity mimic physionet ushcn' \
     'Methods: base mlp cross v1 v2 v2_static v2_no_transfer v1_no_time v1_no_variable' \
@@ -29,7 +29,8 @@ method="${3:-base}"
 case "$backbone" in
   tpatchgnn) model=TPatchQueryFusion ;;
   hipatch) model=HiPatchQueryFusion ;;
-  *) echo 'Backbone must be tpatchgnn or hipatch' >&2; exit 2 ;;
+  mtan|mtand) model=MTANQueryFusion ;;
+  *) echo 'Backbone must be tpatchgnn, hipatch or mtand' >&2; exit 2 ;;
 esac
 case "$dataset" in
   activity|mimic|physionet|ushcn) ;;

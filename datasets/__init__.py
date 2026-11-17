@@ -1,4 +1,5 @@
 from .QueryFusionDataset import QueryFusionDataset
+from .MTANQueryDataset import MTANQueryDataset
 from .TPatchFusionDataset import TPatchFusionDataset
 from .TPatchRecordDataset import TPatchRecordDataset
 from .ExEnProcessedDataset import ExEnProcessedDataset
@@ -14,6 +15,7 @@ def __getattr__(name):
         return ITSClassificationDataset
     raise AttributeError(name)
 __all__ = [
+    "MTANQueryDataset",
     "TPatchFusionDataset",
     "TPatchRecordDataset",
     "ExEnProcessedDataset",

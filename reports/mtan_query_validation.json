@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-17",
+  "upstream_commit": "7a3d536ee742f1cacb4a6d3478ac78a228d995ff",
+  "upstream_classes_unchanged": [
+    "multiTimeAttention",
+    "enc_mtan_rnn",
+    "dec_mtan_rnn"
+  ],
+  "vendor_sha256": "ec1ef6f400e17fbaf4fc36f4e1a368ad80e6cd57d804973b00bd6a21fbbdbca3",
+  "targeted_tests_passed": 133,
+  "new_mtan_tests": 20,
+  "torch": "2.10.0",
+  "device": "cpu",
+  "real_data_runs": 12,
+  "all_real_runs_passed": true,
+  "matched_test_tasks": [
+    "activity",
+    "mimic",
+    "physionet",
+    "ushcn"
+  ],
+  "real_run_epochs": 1,
+  "max_samples_per_split": 2,
+  "default_model_dimensions": true,
+  "full_dataset_or_gpu_accuracy_evaluation": false,
+  "objective": "macro forecast MSE + 0.001 * KL",
+  "evaluation_latent": "posterior mean",
+  "source_summaries": "results/mtand_default_shape_20261117/summary.csv"
+}
