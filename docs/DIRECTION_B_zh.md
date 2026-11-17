@@ -32,6 +32,14 @@ bash scripts/run_query_fusion.sh hipatch ushcn v1
 
 可选设置如 `GPU=2 bash scripts/run_query_fusion.sh tpatchgnn activity v1`；其他数据路径可用 `TPATCH_DATA_ROOT=/path/to/tpatch-data` 指定。`DRY_RUN=1` 仅生成本次配置，不训练。原 Python 矩阵入口保留供后续评估使用，当前以本节单次入口为准，不执行多种子矩阵。
 
+需要一次运行 Hi-Patch 的四个数据集、`base/mlp/v1` 三个方法时，使用：
+
+```bash
+bash scripts/run_hipatch_base_mlp_v1.sh
+```
+
+该入口在同一 GPU 上依次运行 Activity、MIMIC、PhysioNet、USHCN，每个数据集按 base、mlp、v1 的顺序训练，共12次，固定种子3407，完整数据，最多30轮和5轮早停。进度实时显示，每次调用生成新的输出根目录；根目录的 `summary.json` 随运行更新，全部结束后生成 `summary.csv`。某次训练正常返回非零退出码后，矩阵入口记录失败并继续下一组，最终返回非零状态；终端被中断时不会自动续跑。可用 `GPU=2` 指定显卡，或用 `DRY_RUN=1` 仅生成12组配置。
+
 核查发现：
 
 - `baseline/patch_fusion/adapter.py` 的现有两个 Fusion 模型先输出标量预测，再做 DAG 两层 MLP；它们不是查询特征级融合。

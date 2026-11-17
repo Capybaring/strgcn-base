@@ -76,3 +76,33 @@ def test_rejects_multiple_or_invalid_experiments(tmp_path, arguments):
         timeout=10,
     )
     assert run.returncode == 2 and not output.exists()
+
+
+def test_hipatch_batch_contains_exactly_four_datasets_and_three_methods(tmp_path):
+    data = tmp_path / "data with spaces"
+    datasets = ("activity", "mimic", "physionet", "ushcn")
+    methods = ("base", "mlp", "v1")
+    for dataset in datasets:
+        (data / dataset / "processed").mkdir(parents=True)
+    output = tmp_path / "twelve runs"
+    command = ["bash", str(ROOT / "scripts/run_hipatch_base_mlp_v1.sh")]
+    env = dict(os.environ, PYTHON=sys.executable, TPATCH_DATA_ROOT=str(data),
+               RUN_DIR=str(output), DRY_RUN="1")
+    run = subprocess.run(command, cwd=tmp_path, env=env,
+                         capture_output=True, text=True, timeout=20)
+    assert run.returncode == 0, run.stdout + run.stderr
+    expected = {
+        output / "HiPatchQueryFusion" / dataset / "3407" / method / "config.yaml"
+        for dataset in datasets for method in methods
+    }
+    assert set(output.glob("*/*/*/*/config.yaml")) == expected
+    args = json.loads((output / "manifest.json").read_text())["arguments"]
+    assert args["backbones"] == ["HiPatchQueryFusion"]
+    assert args["datasets"] == list(datasets) and args["variants"] == list(methods)
+    assert args["seeds"] == [3407] and args["epochs"] == 30
+    assert not args["small_model"] and args["max_samples_per_split"] is None
+    assert args["stream_logs"] and args["input_mode"] == "FullExo"
+    # The batch entry must preserve the runner's refusal to overwrite old runs.
+    again = subprocess.run(command, cwd=tmp_path, env=env,
+                           capture_output=True, text=True, timeout=20)
+    assert again.returncode != 0 and "FileExistsError" in again.stderr
