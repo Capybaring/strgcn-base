@@ -19,6 +19,8 @@ SCRIPT = ROOT / "scripts/run_query_fusion.sh"
         (["tpatchgnn", "activity", "v1"], "TPatchQueryFusion", "activity", "v1"),
         (["hipatch", "ushcn", "v2"], "HiPatchQueryFusion", "ushcn", "v2"),
         (["mtand", "activity", "v1"], "MTANQueryFusion", "activity", "v1"),
+        (["hipatch", "activity", "strgcn"], "HiPatchQueryFusion", "activity", "strgcn"),
+        (["mtand", "activity", "v1_all"], "MTANQueryFusion", "activity", "v1_all"),
     ],
 )
 def test_one_invocation_creates_one_full_size_fixed_seed_config(
@@ -121,3 +123,45 @@ def test_batch_contains_exactly_four_datasets_and_three_methods(
         command, cwd=tmp_path, env=env, capture_output=True, text=True, timeout=20
     )
     assert again.returncode != 0 and "FileExistsError" in again.stderr
+
+
+@pytest.mark.parametrize(
+    "backbone,model",
+    [
+        ("hipatch", "HiPatchQueryFusion"),
+        ("tpatchgnn", "TPatchQueryFusion"),
+        ("mtand", "MTANQueryFusion"),
+    ],
+)
+def test_strgcn_batch_visibility_and_encoder_configs(tmp_path, backbone, model):
+    import yaml
+
+    data, output = tmp_path / "data with spaces", tmp_path / "runs"
+    for dataset in ("activity", "mimic", "physionet", "ushcn"):
+        (data / dataset / "processed").mkdir(parents=True)
+    run = subprocess.run(
+        ["bash", str(ROOT / "scripts/run_strgcn_query_fusion.sh"), backbone],
+        cwd=tmp_path,
+        env=dict(
+            os.environ,
+            PYTHON=sys.executable,
+            TPATCH_DATA_ROOT=str(data),
+            RUN_DIR=str(output),
+            DRY_RUN="1",
+        ),
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert run.returncode == 0, run.stdout + run.stderr
+    configs = list(output.glob("*/*/*/*/config.yaml"))
+    assert len(configs) == 16
+    for path in configs:
+        assert path.parts[-5] == model and path.parts[-3] == "3407"
+        method = path.parent.name
+        params = yaml.safe_load(path.read_text())["model_config"]["model_params"]
+        if method in ("strgcn", "v1_all"):
+            assert params["allow_future_x"] is True
+            assert params.get("x_encoder", "pointwise") == (
+                "strgcn" if method == "strgcn" else "pointwise"
+            )

@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-18",
+  "method": "strgcn",
+  "x_encoder": "original STRGCN middle-stage joint logits and low-rank Chebyshev operator; no Sandwich",
+  "cross_attention": "unchanged DynamicLagFusion V1 content and time/variable relation biases",
+  "x_visibility": "all supplied valid historical and future X in both X encoding and XY attention",
+  "regression": {
+    "unique_tests_passed": 112,
+    "initial_four_files": 109,
+    "runner_after_three_additional_batch_tests": 15,
+    "note": "12 runner tests are shared between the two invocations; count unique tests once",
+    "files": ["tests/test_strgcn_query_fusion.py", "tests/test_query_fusion.py", "tests/test_mtan_query_fusion.py", "tests/test_query_fusion_runner.py"],
+    "coverage": ["original low_rank_cheb_graph_conv forward and gradient parity", "future X affects earlier X context and Y query features", "future Y label isolation", "all-padding identity", "observation order, padding and chunk invariance", "three backbones x four synthetic dataset schemas backward", "old causal variants retain their information-flow tests", "four-dataset batch configuration and overwrite refusal"]
+  },
+  "real_data_diagnostic": {
+    "dataset": "activity",
+    "backbones": ["TPatchQueryFusion", "HiPatchQueryFusion", "MTANQueryFusion"],
+    "variants": ["strgcn", "v1_all"],
+    "seed": 3407,
+    "device": "cpu",
+    "epochs": 1,
+    "small_model": true,
+    "max_windows_per_split": 2,
+    "successful_runs": 6,
+    "matching_target_and_metadata_arrays": 15,
+    "results": "results/strgcn_x_real_smoke_20261118/summary.json"
+  },
+  "limitations": ["No full-data GPU training or accuracy conclusion", "Full X graph has quadratic compute despite receiver chunking and checkpointing", "Whole-window future X conditioning is a changed oracle/known-X protocol", "V2 lag-transfer with STRGCN encoding is explicitly unsupported"]
+}

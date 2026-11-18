@@ -6,6 +6,8 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 
+from .strgcn_encoder import STRGCNExogenousEncoder
+
 
 @dataclass
 class Observations:
@@ -30,6 +32,11 @@ class DynamicLagFusion(nn.Module):
         use_time_bias=True,
         use_variable_bias=True,
         transfer="dynamic",
+        x_encoder="pointwise",
+        allow_future_x=False,
+        x_layers=1,
+        x_depth=2,
+        x_node_dim=16,
     ):
         super().__init__()
         if mode not in ("cross", "v1", "v2") or transfer not in (
@@ -50,6 +57,17 @@ class DynamicLagFusion(nn.Module):
         self.hidden, self.heads, self.dim = hidden, heads, hidden // heads
         self.mode, self.transfer, self.chunk_size = mode, transfer, chunk_size
         self.use_time_bias, self.use_variable_bias = use_time_bias, use_variable_bias
+        if x_encoder not in ("pointwise", "strgcn"):
+            raise ValueError("x_encoder must be pointwise or strgcn")
+        if x_encoder == "strgcn" and not allow_future_x:
+            raise ValueError(
+                "Unrestricted STRGCN X encoding requires allow_future_x=True"
+            )
+        if x_encoder == "strgcn" and mode == "v2":
+            raise ValueError(
+                "STRGCN X encoding currently supports cross/v1, not V2 transfer"
+            )
+        self.allow_future_x, self.x_encoder_type = allow_future_x, x_encoder
         self.query = nn.Linear(query_dim, hidden)
         self.value_enc = nn.Linear(1, hidden)
         self.variable = nn.Embedding(num_variables, hidden)
@@ -69,6 +87,45 @@ class DynamicLagFusion(nn.Module):
         self.register_buffer("centers", torch.linspace(0, lag_max, lag_bins))
         self.lag_width = lag_max / (lag_bins - 1)
         self.num_variables = num_variables
+        self.x_context = (
+            STRGCNExogenousEncoder(
+                hidden,
+                num_variables,
+                x_node_dim,
+                x_depth,
+                x_layers,
+                chunk_size,
+                dropout,
+            )
+            if x_encoder == "strgcn"
+            else None
+        )
+
+    def protocol(self):
+        return dict(
+            x_encoder=self.x_encoder_type,
+            x_visibility="all supplied observed X"
+            if self.allow_future_x
+            else "source_time <= query_time",
+            x_internal_visibility="all supplied observed X"
+            if self.x_context is not None
+            else "pointwise",
+            mask="valid observations only; queries never sources"
+            if self.allow_future_x
+            else "physical source_time <= query_time; queries never sources",
+            x_operator="STRGCN middle-stage joint relations and low-rank Chebyshev; no Sandwich"
+            if self.x_context is not None
+            else "value + variable + sine-time embedding",
+            x_layers=len(self.x_context.layers) if self.x_context is not None else 0,
+            x_chebyshev_terms=self.x_context.layers[0].gcn_depth
+            if self.x_context is not None
+            else 0,
+            x_relation_rank=self.x_context.layers[
+                0
+            ].learnable_adj_weight_U.embedding_dim
+            if self.x_context is not None
+            else 0,
+        )
 
     def _heads(self, x):
         return x.reshape(*x.shape[:-1], self.heads, self.dim).transpose(1, 2)
@@ -163,9 +220,10 @@ class DynamicLagFusion(nn.Module):
     ):
         """[B,Q,D] -> [B,Q,D]; query tokens never become message sources."""
         x = self._clean(sources)
+        encoded_x = self.x_context(x) if self.x_context is not None else self._encode(x)
         k, v = (
-            self._heads(self.k(self._encode(x))),
-            self._heads(self.v(self._encode(x))),
+            self._heads(self.k(encoded_x)),
+            self._heads(self.v(encoded_x)),
         )
         relation = support = None
         if self.mode == "v2" and self.transfer == "dynamic":
@@ -179,7 +237,9 @@ class DynamicLagFusion(nn.Module):
             q = self._heads(self.q(self.query(features[:, sl])))
             logits = self._logits(q, k, times, ids, x)
             lag = times[:, :, None] - x.times[:, None, :]
-            legal = query_valid[:, sl, None].bool() & x.valid[:, None, :] & (lag >= 0)
+            legal = query_valid[:, sl, None].bool() & x.valid[:, None, :]
+            if not self.allow_future_x:
+                legal = legal & (lag >= 0)
             if self.mode == "v2" and self.transfer != "none":
                 if self.transfer == "static":
                     r = self.static_lag[ids].permute(0, 2, 1, 3).softmax(-1)

@@ -21,6 +21,11 @@ class PatchQueryFusion(PatchFusion):
         transfer="dynamic",
         use_time_bias=True,
         use_variable_bias=True,
+        x_encoder="pointwise",
+        allow_future_x=False,
+        x_layers=1,
+        x_depth=2,
+        x_node_dim=16,
         **kwargs,
     ):
         super().__init__(global_args, backbone, **kwargs)
@@ -48,6 +53,11 @@ class PatchQueryFusion(PatchFusion):
                 use_time_bias=use_time_bias,
                 use_variable_bias=use_variable_bias,
                 transfer=transfer,
+                x_encoder=x_encoder,
+                allow_future_x=allow_future_x,
+                x_layers=x_layers,
+                x_depth=x_depth,
+                x_node_dim=x_node_dim,
             )
         self.register_buffer("y_ids", torch.tensor(self.target_ids))
         global_args["query_fusion_protocol"].update(
@@ -57,6 +67,8 @@ class PatchQueryFusion(PatchFusion):
             lag_bins=lag_bins,
             lag_max=lag_max,
         )
+        if fusion_mode not in ("none", "mlp"):
+            global_args["query_fusion_protocol"].update(self.fusion.protocol())
 
     def encode_queries(self, b):
         return self.core.encode_queries(

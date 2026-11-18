@@ -12,7 +12,7 @@ if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
     'Usage: bash scripts/run_query_fusion.sh [tpatchgnn|hipatch|mtand] [dataset] [method]' \
     'Defaults: tpatchgnn activity base' \
     'Datasets: activity mimic physionet ushcn' \
-    'Methods: base mlp cross v1 v2 v2_static v2_no_transfer v1_no_time v1_no_variable' \
+    'Methods: base mlp cross v1 v1_all strgcn v2 v2_static v2_no_transfer v1_no_time v1_no_variable' \
     'Optional environment: GPU, DEVICE, PYTHON, TPATCH_DATA_ROOT, RUN_DIR, DRY_RUN=1' \
     'Every invocation runs once, with seed 3407 and at most 30 epochs.'
   exit 0
@@ -37,7 +37,7 @@ case "$dataset" in
   *) echo 'Dataset must be activity, mimic, physionet or ushcn' >&2; exit 2 ;;
 esac
 case "$method" in
-  base|mlp|cross|v1|v2|v2_static|v2_no_transfer|v1_no_time|v1_no_variable) ;;
+  base|mlp|cross|v1|v1_all|strgcn|v2|v2_static|v2_no_transfer|v1_no_time|v1_no_variable) ;;
   *) echo 'Unknown method; run this script with --help' >&2; exit 2 ;;
 esac
 case "${DRY_RUN:-0}" in

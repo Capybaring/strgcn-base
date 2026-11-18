@@ -18,6 +18,8 @@ VARIANTS = {
     "mlp": dict(fusion_mode="mlp"),
     "cross": dict(fusion_mode="cross"),
     "v1": dict(fusion_mode="v1"),
+    "v1_all": dict(fusion_mode="v1", allow_future_x=True),
+    "strgcn": dict(fusion_mode="v1", x_encoder="strgcn", allow_future_x=True),
     "v2": dict(fusion_mode="v2"),
     "v2_static": dict(fusion_mode="v2", transfer="static"),
     "v2_no_transfer": dict(fusion_mode="v2", transfer="none"),
@@ -45,7 +47,7 @@ def main():
     p.add_argument(
         "--variants", nargs="+", choices=list(VARIANTS), default=list(VARIANTS)
     )
-    p.add_argument("--seeds", nargs="+", type=int, default=[3407, 3408, 3409])
+    p.add_argument("--seeds", nargs="+", type=int, default=[3407])
     p.add_argument("--device", default="cpu")
     p.add_argument(
         "--input-mode", choices=["FullExo", "HistExo", "NoExo"], default="FullExo"

@@ -76,6 +76,8 @@ class MTANQueryFusion(PatchQueryFusion):
             reference_times="linspace(0,1); same normalized physical clock as observations",
             patching="collate metadata helper only; mTAN receives observations, not patches",
         )
+        if fusion_mode not in ("none", "mlp"):
+            global_args["query_fusion_protocol"].update(self.fusion.protocol())
 
     def encode_queries(self, b):
         z = self.core.encode(
