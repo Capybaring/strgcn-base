@@ -1,5 +1,19 @@
 # 原始基座：全部变量训练，仅内生变量评估
 
+## 命令指定 CUDA 设备
+
+```bash
+bash scripts/run_query_fusion.sh hipatch mimic original --device cuda:1
+bash scripts/run_original_backbones.sh --device cuda:1
+```
+
+直接把 cuda:1 改为 cuda:0/cuda:2/cuda:3 即可，不改变 batch、模型或训练参数。
+显式 --device 不再施加脚本默认的 CUDA_VISIBLE_DEVICES=0，也优先于旧 GPU 环境变量。
+如果调用者/调度器已设置 CUDA_VISIBLE_DEVICES，则保留该限制，cuda:N 仍指可见设备中的编号；
+未设置时与服务器物理编号对应。训练进程也将 CUDA 当前设备设置为所选卡。
+DEVICE=cuda:1 的环境变量写法仍支持；旧 GPU=1 的重映射写法保持兼容。
+同一参数也支持 Hi-Patch/mTAND base-mlp-v1 和 STRGCN 插件批量脚本。
+
 复用当前仓库已有 t-PatchGNN、Hi-Patch 和 mTAN 官方网络实现，不接入 MLP 或注意力插件。
 运行变体为 `original`，与 `base` 区分：`base` 是 Y-only 历史与 Y-only 训练；
 `original` 保留所有原始变量的历史、预测头和训练目标。

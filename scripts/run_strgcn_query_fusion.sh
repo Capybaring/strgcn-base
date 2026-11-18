@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Four datasets, one seed; preserve old runs and compare equal X visibility.
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/query_fusion_device.sh"
 cd "$(dirname "$0")/.."
 if (( $# > 1 )); then
-  echo 'Usage: bash scripts/run_strgcn_query_fusion.sh [hipatch|tpatchgnn|mtand]' >&2
+  echo 'Usage: bash scripts/run_strgcn_query_fusion.sh [hipatch|tpatchgnn|mtand] [--device cuda:1]' >&2
   exit 2
 fi
 backbone="${1:-hipatch}"
@@ -24,7 +25,6 @@ case "${DRY_RUN:-0}" in
   0|1) ;;
   *) echo 'DRY_RUN must be 0 or 1' >&2; exit 2 ;;
 esac
-export CUDA_VISIBLE_DEVICES="${GPU:-${CUDA_VISIBLE_DEVICES:-0}}"
 output="${RUN_DIR:-results/query_fusion/${backbone}_strgcn_all_x_$(date +%Y%m%d_%H%M%S)_$$}"
 command=("${PYTHON:-python}" -u scripts/run_query_fusion.py
   --data-root "$data_root" --output "$output" --device "${DEVICE:-cuda:0}"

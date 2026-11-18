@@ -86,6 +86,7 @@ def main():
         ),
         diagnostic=bool(a.small_model or a.max_samples_per_split or a.epochs < 30),
         python=sys.version,
+        cuda_visible_devices=os.environ.get("CUDA_VISIBLE_DEVICES"),
         created=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
     )
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2))

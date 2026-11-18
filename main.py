@@ -41,6 +41,14 @@ def set_seed(seed: int) -> None:
     random.seed(seed)
 
 
+def select_cuda_device(device, distributed=False):
+    """Bind CUDA's current device as well as later tensor/model placements."""
+    selected = torch.device(device)
+    if selected.type == 'cuda' and not distributed:
+        index = selected.index if selected.index is not None else torch.cuda.current_device()
+        torch.cuda.set_device(index)
+
+
 def load_config(data_path):
     with open(data_path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
@@ -134,6 +142,7 @@ def main(args):
     load_checkpoint = train_config["load_checkpoint"]
     metrics = train_config.get("metrics", ["mae", "rmse", "mape"])
     device = getattr(args, "device", None) or train_config.get("device", "cuda")
+    select_cuda_device(device, distributed=args.distributed)
     train_config["device"] = device
     global_args["device"] = device
 

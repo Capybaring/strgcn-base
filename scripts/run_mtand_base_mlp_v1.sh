@@ -2,9 +2,10 @@
 # Sequential mTAN/mTAND experiments: 4 datasets x 3 methods x 1 seed = 12 runs.
 # Run from the repository: bash scripts/run_mtand_base_mlp_v1.sh
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/query_fusion_device.sh"
 
 if (( $# != 0 )); then
-  echo 'Usage: bash scripts/run_mtand_base_mlp_v1.sh' >&2
+  echo 'Usage: bash scripts/run_mtand_base_mlp_v1.sh [--device cuda:1]' >&2
   exit 2
 fi
 cd "$(dirname "$0")/.."
@@ -21,7 +22,6 @@ case "${DRY_RUN:-0}" in
   *) echo 'DRY_RUN must be 0 or 1' >&2; exit 2 ;;
 esac
 
-export CUDA_VISIBLE_DEVICES="${GPU:-${CUDA_VISIBLE_DEVICES:-0}}"
 output="${RUN_DIR:-results/query_fusion/mtand_base_mlp_v1_$(date +%Y%m%d_%H%M%S)_$$}"
 command=("${PYTHON:-python}" -u scripts/run_query_fusion.py
   --data-root "$data_root"

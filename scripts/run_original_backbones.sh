@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Native networks, all-variable training, endogenous-only validation/test.
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/query_fusion_device.sh"
 cd "$(dirname "$0")/.."
 if (( $# > 1 )); then
-  echo 'Usage: bash scripts/run_original_backbones.sh [all|tpatchgnn|hipatch|mtand]' >&2
+  echo 'Usage: bash scripts/run_original_backbones.sh [all|tpatchgnn|hipatch|mtand] [--device cuda:1]' >&2
   exit 2
 fi
 case "${1:-all}" in
@@ -24,7 +25,6 @@ case "${DRY_RUN:-0}" in
   0|1) ;;
   *) echo 'DRY_RUN must be 0 or 1' >&2; exit 2 ;;
 esac
-export CUDA_VISIBLE_DEVICES="${GPU:-${CUDA_VISIBLE_DEVICES:-0}}"
 output="${RUN_DIR:-results/query_fusion/original_endo_eval_$(date +%Y%m%d_%H%M%S)_$$}"
 command=("${PYTHON:-python}" -u scripts/run_query_fusion.py
   --data-root "$data_root" --output "$output" --device "${DEVICE:-cuda:0}"
