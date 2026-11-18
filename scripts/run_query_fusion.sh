@@ -13,7 +13,7 @@ if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
     'Defaults: tpatchgnn activity base' \
     'Datasets: activity mimic physionet ushcn' \
     'Methods: original base mlp cross v1 v1_all strgcn v2 v2_static v2_no_transfer v1_no_time v1_no_variable' \
-    'Optional environment: GPU, DEVICE, PYTHON, TPATCH_DATA_ROOT, RUN_DIR, DRY_RUN=1' \
+    'Optional environment: GPU, DEVICE, BATCH_SIZE, PYTHON, TPATCH_DATA_ROOT, RUN_DIR, DRY_RUN=1' \
     'Every invocation runs once, with seed 3407 and at most 30 epochs.'
   exit 0
 fi
@@ -64,7 +64,9 @@ command=("${PYTHON:-python}" -u scripts/run_query_fusion.py
   --epochs 30
   --stream-logs)
 if [[ "${DRY_RUN:-0}" == 1 ]]; then command+=(--plan-only); fi
+if [[ -n "${BATCH_SIZE:-}" ]]; then command+=(--batch-size "$BATCH_SIZE"); fi
 
 printf 'Running: %s / %s / %s (seed 3407)\n' "$backbone" "$dataset" "$method"
 printf 'Output: %s\n' "$output"
+printf 'Physical GPU(s): %s; process device: %s; batch size: %s\n' "$CUDA_VISIBLE_DEVICES" "${DEVICE:-cuda:0}" "${BATCH_SIZE:-config default}"
 exec "${command[@]}"

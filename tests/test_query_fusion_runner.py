@@ -12,6 +12,43 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/run_query_fusion.sh"
 
 
+@pytest.mark.parametrize("dedicated,batch,gpu", [(False, "1", "1"), (True, None, "1"), (True, "2", "3")])
+def test_hipatch_mimic_batch_override_preserves_native_config(tmp_path, dedicated, batch, gpu):
+    import yaml
+
+    data, output = tmp_path / "data", tmp_path / "runs"
+    (data / "mimic" / "processed").mkdir(parents=True)
+    env = dict(os.environ, PYTHON=sys.executable, TPATCH_DATA_ROOT=str(data),
+               RUN_DIR=str(output), DRY_RUN="1", GPU=gpu)
+    env.pop("BATCH_SIZE", None)
+    if batch is not None:
+        env["BATCH_SIZE"] = batch
+    command = (["bash", str(ROOT / "scripts/run_hipatch_mimic_original.sh")] if dedicated
+               else ["bash", str(SCRIPT), "hipatch", "mimic", "original"])
+    run = subprocess.run(command, env=env, capture_output=True, text=True, timeout=20)
+    assert run.returncode == 0, run.stdout + run.stderr
+    path = output / "HiPatchQueryFusion/mimic/3407/original/config.yaml"
+    config = yaml.safe_load(path.read_text())
+    reference = yaml.safe_load((ROOT / "config/HiPatchQueryFusion/tpatch/mimic.yaml").read_text())
+    assert config["train_config"]["batch_size"] == int(batch or "1")
+    params = dict(reference["model_config"]["model_params"], fusion_mode="none")
+    assert config["model_config"]["model_params"] == params
+    assert config["data_config"]["dataset_params"]["patch_size"] == 12
+    assert config["train_config"]["trainer_params"]["evaluation_scope"] == "endogenous"
+    assert f"Physical GPU(s): {gpu}; process device: cuda:0" in run.stdout
+    assert json.loads((output / "manifest.json").read_text())["arguments"]["batch_size"] == int(batch or "1")
+
+
+def test_rejects_zero_batch_before_creating_output(tmp_path):
+    output = tmp_path / "must not exist"
+    run = subprocess.run([sys.executable, str(ROOT / "scripts/run_query_fusion.py"),
+                          "--output", str(output), "--data-root", str(tmp_path),
+                          "--batch-size", "0", "--plan-only"],
+                         capture_output=True, text=True, timeout=20)
+    assert run.returncode != 0 and "--batch-size must be positive" in run.stderr
+    assert not output.exists()
+
+
 @pytest.mark.parametrize(
     "arguments,model,dataset,method",
     [

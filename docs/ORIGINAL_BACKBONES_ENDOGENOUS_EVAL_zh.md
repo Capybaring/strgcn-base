@@ -67,6 +67,26 @@ bash scripts/run_query_fusion.sh hipatch activity original
 
 GPU、PYTHON、DEVICE、TPATCH_DATA_ROOT、RUN_DIR、DRY_RUN 环境变量与现有脚本一致。
 
+## Hi-Patch / MIMIC 显存不足时
+
+原始实现显式构造观测级关系矩阵和边消息，默认 batch=32 可能超出空闲48GB卡。
+专用入口默认选择物理GPU1、batch=1，保持网络宽度、patch和内生评估不变：
+
+```bash
+GPU=1 bash scripts/run_hipatch_mimic_original.sh
+```
+
+等价的通用入口（现已支持 BATCH_SIZE）：
+
+```bash
+GPU=1 BATCH_SIZE=1 bash scripts/run_query_fusion.sh hipatch mimic original
+```
+
+GPU 指物理卡编号；CUDA_VISIBLE_DEVICES 重映射后，进程内仍使用 cuda:0，
+因此报错中 GPU0 不代表选错物理卡。不要同时指定 DEVICE=cuda:1。
+batch大小写入运行配置、manifest及metrics协议；改变batch会改变优化过程，比较时需注明。
+只减小batch不能保证所有记录都适合显存，专用入口尚未在远程GPU上验证。
+
 ## 验证
 
 2026-11-18：127项相关测试通过，其中新增15项；三个基座×四个真实数据集，

@@ -55,6 +55,7 @@ def main():
     )
     p.add_argument("--backbone-history", choices=["y", "yx"], default="y")
     p.add_argument("--epochs", type=int, default=30)
+    p.add_argument("--batch-size", type=int, help="Override only training/evaluation batch size")
     p.add_argument("--max-samples-per-split", type=int)
     p.add_argument(
         "--small-model",
@@ -68,6 +69,8 @@ def main():
         help="Display training progress while saving the same output to run.log",
     )
     a = p.parse_args()
+    if a.batch_size is not None and a.batch_size < 1:
+        p.error("--batch-size must be positive")
     if "original" in a.variants and a.input_mode != "FullExo":
         p.error("original preserves all variable histories; use --input-mode FullExo")
     out = a.output.resolve()
@@ -131,6 +134,8 @@ def main():
                             small["n_layer"] = 1
                         c["model_config"]["model_params"].update(small)
                         c["train_config"]["batch_size"] = 2
+                    if a.batch_size is not None:
+                        c["train_config"]["batch_size"] = a.batch_size
                     c["train_config"]["random_seed"] = seed
                     c["train_config"]["trainer_params"]["max_epoch_num"] = a.epochs
                     config = run / "config.yaml"
