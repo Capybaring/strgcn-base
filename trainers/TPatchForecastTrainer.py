@@ -10,7 +10,10 @@ from utils.tpatch_evaluation import variable_error_sums, variable_macro_loss, su
 
 
 class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
-    def __init__(self, *args, profile_steps=0, **kwargs):
+    def __init__(self, *args, profile_steps=0, evaluation_scope='endogenous', **kwargs):
+        if evaluation_scope not in ('endogenous', 'all'):
+            raise ValueError('evaluation_scope must be endogenous or all')
+        self.evaluation_scope = evaluation_scope
         if not isinstance(profile_steps, int) or profile_steps < 0:
             raise ValueError('profile_steps must be a nonnegative integer')
         self._profile_remaining = profile_steps
@@ -84,6 +87,11 @@ class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
             raise ValueError('TPatch metric names are mse, mae and rmse')
         self.model.eval()
         dim = self.global_args['num_of_vals']
+        packet = data_loader.dataset.packet
+        target_ids = (packet.get('evaluation_target_ids', packet['target_ids'])
+                      if self.evaluation_scope == 'endogenous' else packet['target_ids'])
+        selected_variables = torch.zeros(dim, dtype=torch.bool, device=self.device)
+        selected_variables[target_ids] = True
         se, ae, count = (torch.zeros(dim, dtype=torch.float64, device=self.device) for _ in range(3))
         exported = {k: [] for k in ('prediction', 'actual', 'mask', 'variable_id', 'window_id')}
         windows = 0
@@ -91,6 +99,9 @@ class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
             b = self._batch(raw)
             pred = self._predict(b)
             mask = b['batch_pred_mask'].bool() & b['batch_pad_mask'].bool()
+            # Metric-only selection AFTER prediction; train loss and model inputs
+            # retain their original all-variable prediction mask.
+            mask = mask & selected_variables[b['batch_var_idx'].long()]
             sums = variable_error_sums(pred.double(), b['batch_value'].double(), mask,
                                        b['batch_var_idx'], dim)
             se += sums[0]; ae += sums[1]; count += sums[2]
@@ -105,7 +116,6 @@ class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
         if windows == 0 or not count.any():
             raise ValueError('Empty evaluation or no observed targets')
         summary = summarize_variable_errors(se, ae, count)
-        target_ids = data_loader.dataset.packet['target_ids']
         summary.update(loss=summary['mse'], forecast_window_count=windows,
             target_ids=target_ids, target_names=[data_loader.dataset.packet['names'][i] for i in target_ids],
             observed_count_by_target=count[target_ids].long().cpu().tolist(),

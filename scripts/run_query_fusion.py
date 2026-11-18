@@ -15,6 +15,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 VARIANTS = {
     "base": dict(fusion_mode="none"),
+    "original": dict(fusion_mode="none"),
     "mlp": dict(fusion_mode="mlp"),
     "cross": dict(fusion_mode="cross"),
     "v1": dict(fusion_mode="v1"),
@@ -67,6 +68,8 @@ def main():
         help="Display training progress while saving the same output to run.log",
     )
     a = p.parse_args()
+    if "original" in a.variants and a.input_mode != "FullExo":
+        p.error("original preserves all variable histories; use --input-mode FullExo")
     out = a.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
     data_root = a.data_root.resolve()
@@ -108,6 +111,14 @@ def main():
                     if a.input_mode == "HistExo":
                         dp["known_future_exogenous_var_ids"] = []
                     c["model_config"]["model_params"].update(VARIANTS[variant])
+                    if variant == "original":
+                        c["data_config"]["dataset_name"] = (
+                            "AllVariableMTANDataset" if backbone == "MTANQueryFusion"
+                            else "AllVariablePatchDataset"
+                        )
+                        dp.update(backbone_history="yx", known_future_exogenous_var_ids=[],
+                                  use_exogenous=True)
+                        c["train_config"]["trainer_params"]["evaluation_scope"] = "endogenous"
                     if a.small_model:
                         small = dict(
                             hid_dim=8, n_heads=1, plugin_hidden=8, plugin_heads=2

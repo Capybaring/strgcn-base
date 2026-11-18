@@ -1,0 +1,33 @@
+{
+  "date": "2026-11-18",
+  "variant": "original",
+  "network_sources": ["baseline/patch_fusion/vendor/tpatchgnn.py", "baseline/patch_fusion/vendor/hipatch.py", "baseline/mtan/vendor/models.py"],
+  "vendor_files_changed": false,
+  "training": "all variable histories, all valid future variable labels, no fusion or future-value input",
+  "evaluation": "mask endogenous variables after prediction; macro per-variable MSE/MAE and sqrt(macro MSE)",
+  "variable_counts": {
+    "activity": {"training": 12, "evaluation": 6},
+    "mimic": {"training": 96, "evaluation": 52},
+    "physionet": {"training": 41, "evaluation": 35},
+    "ushcn": {"training": 5, "evaluation": 2}
+  },
+  "tests": {
+    "passed": 127,
+    "new_tests": 15,
+    "files": ["tests/test_original_endogenous_evaluation.py", "tests/test_query_fusion.py", "tests/test_mtan_query_fusion.py", "tests/test_query_fusion_runner.py", "tests/test_strgcn_query_fusion.py"],
+    "verified": ["all three native decoder output parity on all four dataset schemas", "all variable historical masks retained in original column order", "all future values excluded from model inputs", "training loss covers all observed variables", "evaluation selection leaves predictions, training masks and loss unchanged", "Y labels and times match plugin tasks", "endogenous-only validation/test exports and metadata", "batch script creates 12 isolated configs and refuses existing output"]
+  },
+  "real_data_smoke": {
+    "successful_runs": 12,
+    "backbones": ["TPatchQueryFusion", "HiPatchQueryFusion", "MTANQueryFusion"],
+    "datasets": ["activity", "mimic", "physionet", "ushcn"],
+    "device": "cpu",
+    "seed": 3407,
+    "epochs": 1,
+    "small_model": true,
+    "max_windows_per_split": 2,
+    "independent_export_metric_recomputations_passed": 12,
+    "results": "results/original_endo_real_smoke_20261118/summary.json"
+  },
+  "limits": ["Not full-data GPU training or a published benchmark reproduction", "mTAN retains the current repository forecasting MSE+KL adaptation", "validation-only target selection can change checkpoint/early-stop epoch"]
+}

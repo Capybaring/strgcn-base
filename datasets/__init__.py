@@ -1,5 +1,6 @@
 from .QueryFusionDataset import QueryFusionDataset
 from .MTANQueryDataset import MTANQueryDataset
+from .AllVariableForecastDataset import AllVariablePatchDataset, AllVariableMTANDataset
 from .TPatchFusionDataset import TPatchFusionDataset
 from .TPatchRecordDataset import TPatchRecordDataset
 from .ExEnProcessedDataset import ExEnProcessedDataset

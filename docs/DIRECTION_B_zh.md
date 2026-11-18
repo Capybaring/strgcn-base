@@ -1,5 +1,9 @@
 # 方向 B：查询特征级外生融合
 
+原始三基座的全变量训练／仅内生评估入口：
+[ORIGINAL_BACKBONES_ENDOGENOUS_EVAL_zh.md](ORIGINAL_BACKBONES_ENDOGENOUS_EVAL_zh.md)。
+一次运行：`bash scripts/run_original_backbones.sh`。
+
 ## 仓库核查与实施顺序
 
 起点为 GitHub `master` 的 `22fa20e83e3a84ed6c6970f2cbbd6668d391182e`（2026-11-16 核对远端 HEAD）。最初按要求在独立开发分支实现；现按用户最新要求将实现同步到原 `master`，后续直接在原分支维护，不新增分支。原工作目录的四个未跟踪网格搜索/审计文件，以及 sources、原始数据和已有模型/结果保持原样。

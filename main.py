@@ -458,6 +458,7 @@ def main(args):
 
         if train_config['trainer_name'] == 'TPatchForecastTrainer':
             packet = test_dataset.packet
+            evaluation_target_ids = trainer.last_eval_summary['target_ids']
             is_record = packet.get('kind') == 'tpatch_records'
             np.save(os.path.join(result_save_dir_path, 'test_window_id.npy'), trainer.last_eval_window_id)
             if is_record:
@@ -488,7 +489,7 @@ def main(args):
                 fusion=(dict(global_args['query_fusion_protocol']) if 'query_fusion_protocol' in global_args else dict(module='DAG two-layer pointwise MLP, no residual',
                              future_fill=global_args['fusion_future_fill'],
                              fusion_inputs=global_args['fusion_inputs']) if 'fusion_inputs' in global_args else None),
-                target_ids=packet['target_ids'],
+                target_ids=evaluation_target_ids,
                 checkpoint_attention=model_config['model_params'].get('checkpoint_attention'),
                 packed_attention=(data_config['dataset_params'].get('pack_attention', False) or
                     model_config['model_params'].get('rolling_window_size') is not None),
@@ -500,11 +501,21 @@ def main(args):
                     pattern_memory='ordered_causal_attention_over_known_observation_readouts',
                     query_states_in_memory=False, detach_between_windows=False)
                     if model_config['model_params'].get('rolling_window_size') is not None else None))
-            protocol.update(target_names=[packet['names'][i] for i in packet['target_ids']],
+            protocol.update(target_names=[packet['names'][i] for i in evaluation_target_ids],
                 exogenous_var_ids=sorted(train_dataset.exogenous_var_ids),
                 forecast_inputs=('Y_history_only' if not train_dataset.use_exogenous else
                                  'Y_history_X_history_and_known_future' if train_dataset.known_future_exogenous_var_ids else
                                  'Y_history_and_X_history'))
+            if 'original_baseline_protocol' in global_args:
+                protocol.update(
+                    original_baseline=dict(global_args['original_baseline_protocol']),
+                    training_target_ids=packet['target_ids'],
+                    evaluation_scope=trainer.evaluation_scope,
+                    forecast_inputs='all_variable_history_only',
+                    use_exogenous=True,
+                    exogenous_var_ids=packet['role_exogenous_ids'],
+                    known_future_exogenous_var_ids=[],
+                )
             if not is_record:
                 protocol.update(dataset=global_args['dataset_name'],
                     history_seconds=packet['history_seconds'],
