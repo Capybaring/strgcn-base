@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-19",
+  "dataset": "DIST",
+  "backbones": ["TPatchQueryFusion", "HiPatchQueryFusion", "MTANQueryFusion"],
+  "methods": ["original", "base", "mlp", "v1", "strgcn"],
+  "combinations": 15,
+  "protocol": {
+    "endogenous": "9 PV variables in existing DIST config",
+    "exogenous": "9 corresponding OP variables",
+    "history_seconds": 7200,
+    "forecast_seconds": 1800,
+    "split": "chronological windows 60/20/20",
+    "scaler": "training-window MinMax",
+    "missingness": "original mask and finite raw value and raw value != 0",
+    "evaluation": "9 Y variables; global per-variable mean then macro average",
+    "default_batch_size": 1,
+    "seed": 3407
+  },
+  "tests": {
+    "passed_unique": 170,
+    "dist_tests": 18,
+    "existing_regressions": 152,
+    "dist_test_file": "tests/test_dist_query_fusion.py",
+    "coverage": ["all 15 forward/backward combinations", "future Y label isolation", "original all-variable training and Y-only evaluation", "identical Y labels across methods", "CLI training exports", "batch and single launchers with cuda:1", "old four-dataset and CUDA-selection regressions"]
+  },
+  "real_data_diagnostics": {
+    "device": "cpu",
+    "epochs": 1,
+    "max_windows_per_split": 1,
+    "small_model_successful_runs": 15,
+    "default_shape_successful_runs": 15,
+    "results": ["results/dist_query_smoke_20261119/summary.json", "results/dist_query_default_shape_20261119/summary.json"],
+    "independent_metric_recomputations": 30,
+    "Y_targets_identical_across_methods": true
+  },
+  "limitations": ["No full-data GPU training or accuracy conclusion", "V1 uses causal X visibility; strgcn uses all supplied X; v1_all is the matching-visibility control", "mTAN retains existing forecasting MSE+KL adaptation"]
+}

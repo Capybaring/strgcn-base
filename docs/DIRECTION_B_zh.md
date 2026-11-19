@@ -1,5 +1,8 @@
 # 方向 B：查询特征级外生融合
 
+DIST三个基座×五种方法已接入：[DIST_QUERY_FUSION_zh.md](DIST_QUERY_FUSION_zh.md)。
+入口：`bash scripts/run_dist_query_fusion.sh --device cuda:1`。
+
 原始三基座的全变量训练／仅内生评估入口：
 [ORIGINAL_BACKBONES_ENDOGENOUS_EVAL_zh.md](ORIGINAL_BACKBONES_ENDOGENOUS_EVAL_zh.md)。
 一次运行：`bash scripts/run_original_backbones.sh`。

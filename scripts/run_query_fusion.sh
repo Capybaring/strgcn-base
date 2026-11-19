@@ -12,7 +12,7 @@ if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
   printf '%s\n' \
     'Usage: bash scripts/run_query_fusion.sh [tpatchgnn|hipatch|mtand] [dataset] [method] [--device cuda:1]' \
     'Defaults: tpatchgnn activity base' \
-    'Datasets: activity mimic physionet ushcn' \
+    'Datasets: activity mimic physionet ushcn dist' \
     'Methods: original base mlp cross v1 v1_all strgcn v2 v2_static v2_no_transfer v1_no_time v1_no_variable' \
     'Optional environment: GPU, DEVICE, BATCH_SIZE, PYTHON, TPATCH_DATA_ROOT, RUN_DIR, DRY_RUN=1' \
     'Every invocation runs once, with seed 3407 and at most 30 epochs.'
@@ -35,7 +35,8 @@ case "$backbone" in
 esac
 case "$dataset" in
   activity|mimic|physionet|ushcn) ;;
-  *) echo 'Dataset must be activity, mimic, physionet or ushcn' >&2; exit 2 ;;
+  dist|DIST) dataset=dist ;;
+  *) echo 'Dataset must be activity, mimic, physionet, ushcn or dist' >&2; exit 2 ;;
 esac
 case "$method" in
   original|base|mlp|cross|v1|v1_all|strgcn|v2|v2_static|v2_no_transfer|v1_no_time|v1_no_variable) ;;
@@ -47,7 +48,12 @@ case "${DRY_RUN:-0}" in
 esac
 
 data_root="${TPATCH_DATA_ROOT:-./data/tpatch-data}"
-if [[ ! -d "$data_root/$dataset/processed" ]]; then
+if [[ "$dataset" == dist ]]; then
+  if [[ ! -f "${DIST_DATA_PATH:-./data/processed/DIST.npz}" ]]; then
+    echo "Missing DIST archive: ${DIST_DATA_PATH:-./data/processed/DIST.npz}" >&2
+    exit 2
+  fi
+elif [[ ! -d "$data_root/$dataset/processed" ]]; then
   echo "Missing dataset directory: $data_root/$dataset/processed" >&2
   echo 'Set TPATCH_DATA_ROOT to your tpatch-data directory.' >&2
   exit 2
@@ -65,6 +71,7 @@ command=("${PYTHON:-python}" -u scripts/run_query_fusion.py
   --stream-logs)
 if [[ "${DRY_RUN:-0}" == 1 ]]; then command+=(--plan-only); fi
 if [[ -n "${BATCH_SIZE:-}" ]]; then command+=(--batch-size "$BATCH_SIZE"); fi
+if [[ "$dataset" == dist ]]; then command+=(--dist-data "${DIST_DATA_PATH:-./data/processed/DIST.npz}"); fi
 
 printf 'Running: %s / %s / %s (seed 3407)\n' "$backbone" "$dataset" "$method"
 printf 'Output: %s\n' "$output"

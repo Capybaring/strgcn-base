@@ -33,10 +33,11 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--output", required=True, type=Path)
     p.add_argument("--data-root", required=True, type=Path)
+    p.add_argument("--dist-data", type=Path, default=ROOT / "data/processed/DIST.npz")
     p.add_argument(
         "--datasets",
         nargs="+",
-        choices=["activity", "mimic", "physionet", "ushcn"],
+        choices=["activity", "mimic", "physionet", "ushcn", "dist"],
         default=["activity", "mimic", "physionet", "ushcn"],
     )
     p.add_argument(
@@ -55,7 +56,9 @@ def main():
     )
     p.add_argument("--backbone-history", choices=["y", "yx"], default="y")
     p.add_argument("--epochs", type=int, default=30)
-    p.add_argument("--batch-size", type=int, help="Override only training/evaluation batch size")
+    p.add_argument(
+        "--batch-size", type=int, help="Override only training/evaluation batch size"
+    )
     p.add_argument("--max-samples-per-split", type=int)
     p.add_argument(
         "--small-model",
@@ -97,16 +100,26 @@ def main():
                 for variant in a.variants:
                     run = out / backbone / dataset / str(seed) / variant
                     run.mkdir(parents=True)
-                    c = yaml.safe_load(
-                        (ROOT / f"config/{backbone}/tpatch/{dataset}.yaml").read_text()
+                    config_source = (
+                        ROOT / f"config/{backbone}/processed/DIST.yaml"
+                        if dataset == "dist"
+                        else ROOT / f"config/{backbone}/tpatch/{dataset}.yaml"
                     )
-                    c["global_config"]["tpatch_data_root"] = str(data_root)
-                    c["data_config"]["data_processor_params"]["data_root"] = str(
-                        data_root
-                    )
+                    c = yaml.safe_load(config_source.read_text())
+                    if dataset == "dist":
+                        c["global_config"]["exen_data_path"] = str(
+                            a.dist_data.resolve()
+                        )
+                    else:
+                        c["global_config"]["tpatch_data_root"] = str(data_root)
+                        c["data_config"]["data_processor_params"]["data_root"] = str(
+                            data_root
+                        )
                     if a.max_samples_per_split:
                         c["data_config"]["data_processor_params"][
-                            "max_samples_per_split"
+                            "max_windows_per_split"
+                            if dataset == "dist"
+                            else "max_samples_per_split"
                         ] = a.max_samples_per_split
                     dp = c["data_config"]["dataset_params"]
                     dp["backbone_history"] = a.backbone_history
@@ -117,12 +130,18 @@ def main():
                     c["model_config"]["model_params"].update(VARIANTS[variant])
                     if variant == "original":
                         c["data_config"]["dataset_name"] = (
-                            "AllVariableMTANDataset" if backbone == "MTANQueryFusion"
+                            "AllVariableMTANDataset"
+                            if backbone == "MTANQueryFusion"
                             else "AllVariablePatchDataset"
                         )
-                        dp.update(backbone_history="yx", known_future_exogenous_var_ids=[],
-                                  use_exogenous=True)
-                        c["train_config"]["trainer_params"]["evaluation_scope"] = "endogenous"
+                        dp.update(
+                            backbone_history="yx",
+                            known_future_exogenous_var_ids=[],
+                            use_exogenous=True,
+                        )
+                        c["train_config"]["trainer_params"]["evaluation_scope"] = (
+                            "endogenous"
+                        )
                     if a.small_model:
                         small = dict(
                             hid_dim=8, n_heads=1, plugin_hidden=8, plugin_heads=2
