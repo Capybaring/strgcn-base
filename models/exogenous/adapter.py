@@ -26,6 +26,8 @@ class PatchQueryFusion(PatchFusion):
         x_layers=1,
         x_depth=2,
         x_node_dim=16,
+        use_gap_encoding=True,
+        use_density_encoding=True,
         **kwargs,
     ):
         super().__init__(global_args, backbone, **kwargs)
@@ -58,6 +60,8 @@ class PatchQueryFusion(PatchFusion):
                 x_layers=x_layers,
                 x_depth=x_depth,
                 x_node_dim=x_node_dim,
+                use_gap_encoding=use_gap_encoding,
+                use_density_encoding=use_density_encoding,
             )
         self.register_buffer("y_ids", torch.tensor(self.target_ids))
         global_args["query_fusion_protocol"].update(

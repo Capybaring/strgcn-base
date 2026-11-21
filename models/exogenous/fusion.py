@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 
+from .irregular_graph_transformer import IrregularGraphTransformer
 from .strgcn_encoder import STRGCNExogenousEncoder
 
 
@@ -37,6 +38,8 @@ class DynamicLagFusion(nn.Module):
         x_layers=1,
         x_depth=2,
         x_node_dim=16,
+        use_gap_encoding=True,
+        use_density_encoding=True,
     ):
         super().__init__()
         if mode not in ("cross", "v1", "v2") or transfer not in (
@@ -57,15 +60,13 @@ class DynamicLagFusion(nn.Module):
         self.hidden, self.heads, self.dim = hidden, heads, hidden // heads
         self.mode, self.transfer, self.chunk_size = mode, transfer, chunk_size
         self.use_time_bias, self.use_variable_bias = use_time_bias, use_variable_bias
-        if x_encoder not in ("pointwise", "strgcn"):
-            raise ValueError("x_encoder must be pointwise or strgcn")
-        if x_encoder == "strgcn" and not allow_future_x:
+        if x_encoder not in ("pointwise", "strgcn", "irgraph"):
+            raise ValueError("x_encoder must be pointwise, strgcn or irgraph")
+        if x_encoder != "pointwise" and not allow_future_x:
+            raise ValueError("Unrestricted X encoding requires allow_future_x=True")
+        if x_encoder != "pointwise" and mode == "v2":
             raise ValueError(
-                "Unrestricted STRGCN X encoding requires allow_future_x=True"
-            )
-        if x_encoder == "strgcn" and mode == "v2":
-            raise ValueError(
-                "STRGCN X encoding currently supports cross/v1, not V2 transfer"
+                "Contextual X encoding currently supports cross/v1, not V2 transfer"
             )
         self.allow_future_x, self.x_encoder_type = allow_future_x, x_encoder
         self.query = nn.Linear(query_dim, hidden)
@@ -100,8 +101,22 @@ class DynamicLagFusion(nn.Module):
             if x_encoder == "strgcn"
             else None
         )
+        if x_encoder == "irgraph":
+            self.x_context = IrregularGraphTransformer(
+                hidden,
+                num_variables,
+                heads,
+                x_node_dim,
+                x_layers,
+                chunk_size,
+                dropout,
+                use_gap_encoding,
+                use_density_encoding,
+            )
 
     def protocol(self):
+        is_gcn = self.x_encoder_type == "strgcn"
+        is_graph = self.x_encoder_type == "irgraph"
         return dict(
             x_encoder=self.x_encoder_type,
             x_visibility="all supplied observed X"
@@ -114,17 +129,33 @@ class DynamicLagFusion(nn.Module):
             if self.allow_future_x
             else "physical source_time <= query_time; queries never sources",
             x_operator="STRGCN middle-stage joint relations and low-rank Chebyshev; no Sandwich"
-            if self.x_context is not None
-            else "value + variable + sine-time embedding",
+            if is_gcn
+            else (
+                "multihead content/time/variable Graph Transformer"
+                if is_graph
+                else "value + variable + sine-time embedding"
+            ),
             x_layers=len(self.x_context.layers) if self.x_context is not None else 0,
-            x_chebyshev_terms=self.x_context.layers[0].gcn_depth
-            if self.x_context is not None
-            else 0,
+            x_chebyshev_terms=self.x_context.layers[0].gcn_depth if is_gcn else 0,
             x_relation_rank=self.x_context.layers[
                 0
             ].learnable_adj_weight_U.embedding_dim
-            if self.x_context is not None
+            if is_gcn
             else 0,
+            **(
+                dict(
+                    gap_node_encoding=self.x_context.use_gap_encoding,
+                    density_attention_encoding=self.x_context.use_density_encoding,
+                    sampling_geometry="per-sample per-X-variable unique observed times; left/right relative gaps",
+                    regular_zero="z=(delta-m*mean_gap)/mean_gap; F(z,m)-F(0,m)",
+                    density="left/right log(mean_gap/delta), clipped [-8,8]; missing edges zero",
+                    density_injection="bias-free X attention Q/K and X-to-Y attention K",
+                    geometry_roundoff="float64 gaps; uniform if max gap deviation <= 2*input_eps*max(abs(time),mean_gap)",
+                    x_variable_relation_rank=self.x_context.layers[0].node_dim,
+                )
+                if is_graph
+                else {}
+            ),
         )
 
     def _heads(self, x):
@@ -220,9 +251,16 @@ class DynamicLagFusion(nn.Module):
     ):
         """[B,Q,D] -> [B,Q,D]; query tokens never become message sources."""
         x = self._clean(sources)
-        encoded_x = self.x_context(x) if self.x_context is not None else self._encode(x)
+        density_key = 0.0
+        if self.x_encoder_type == "irgraph":
+            encoded_x, density = self.x_context.encode_with_geometry(x)
+            density_key = self.x_context.cross_density_key(density)
+        else:
+            encoded_x = (
+                self.x_context(x) if self.x_context is not None else self._encode(x)
+            )
         k, v = (
-            self._heads(self.k(encoded_x)),
+            self._heads(self.k(encoded_x) + density_key),
             self._heads(self.v(encoded_x)),
         )
         relation = support = None

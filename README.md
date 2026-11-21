@@ -238,3 +238,15 @@ bash scripts/run_mtand_base_mlp_v1.sh  # four datasets x base/mlp/v1, 12 sequent
 
 See [mTAN provenance, objective, and interface](baseline/mtan/README.md). This is a
 forecasting adaptation, not a reproduction of the original interpolation scores.
+
+`irgraph` adds an X Graph Transformer with a mathematically centered gap-node
+residual and directional density in attention. The added sampling terms vanish
+on each variable's regular grid, including boundaries. Existing variants remain
+available. All supplied X, including future X, are visible. See
+[数学定义、消融与运行说明](docs/IRREGULAR_GRAPH_TRANSFORMER_zh.md).
+
+```bash
+bash scripts/run_irgraph_query_fusion.sh --device cuda:1  # 3 backbones x 5 datasets
+bash scripts/run_query_fusion.sh hipatch mimic irgraph --device cuda:1
+COMPARE=1 bash scripts/run_irgraph_query_fusion.sh hipatch physionet --device cuda:1
+```
