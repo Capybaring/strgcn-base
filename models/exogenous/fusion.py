@@ -8,6 +8,7 @@ from torch import nn
 
 from .irregular_graph_transformer import IrregularGraphTransformer
 from .strgcn_encoder import STRGCNExogenousEncoder
+from .voronoi_graph_transformer import VoronoiGraphTransformer
 
 
 @dataclass
@@ -60,8 +61,8 @@ class DynamicLagFusion(nn.Module):
         self.hidden, self.heads, self.dim = hidden, heads, hidden // heads
         self.mode, self.transfer, self.chunk_size = mode, transfer, chunk_size
         self.use_time_bias, self.use_variable_bias = use_time_bias, use_variable_bias
-        if x_encoder not in ("pointwise", "strgcn", "irgraph"):
-            raise ValueError("x_encoder must be pointwise, strgcn or irgraph")
+        if x_encoder not in ("pointwise", "strgcn", "irgraph", "voronoi"):
+            raise ValueError("x_encoder must be pointwise, strgcn, irgraph or voronoi")
         if x_encoder != "pointwise" and not allow_future_x:
             raise ValueError("Unrestricted X encoding requires allow_future_x=True")
         if x_encoder != "pointwise" and mode == "v2":
@@ -113,10 +114,22 @@ class DynamicLagFusion(nn.Module):
                 use_gap_encoding,
                 use_density_encoding,
             )
+        elif x_encoder == "voronoi":
+            self.x_context = VoronoiGraphTransformer(
+                hidden,
+                num_variables,
+                heads,
+                x_node_dim,
+                x_layers,
+                chunk_size,
+                dropout,
+                use_density_encoding,
+            )
 
     def protocol(self):
         is_gcn = self.x_encoder_type == "strgcn"
         is_graph = self.x_encoder_type == "irgraph"
+        is_voronoi = self.x_encoder_type == "voronoi"
         return dict(
             x_encoder=self.x_encoder_type,
             x_visibility="all supplied observed X"
@@ -131,7 +144,9 @@ class DynamicLagFusion(nn.Module):
             x_operator="STRGCN middle-stage joint relations and low-rank Chebyshev; no Sandwich"
             if is_gcn
             else (
-                "multihead content/time/variable Graph Transformer"
+                "multihead content/time/variable/density Graph Transformer"
+                if is_voronoi
+                else "multihead content/time/variable Graph Transformer"
                 if is_graph
                 else "value + variable + sine-time embedding"
             ),
@@ -154,6 +169,23 @@ class DynamicLagFusion(nn.Module):
                     x_variable_relation_rank=self.x_context.layers[0].node_dim,
                 )
                 if is_graph
+                else {}
+            ),
+            **(
+                dict(
+                    density_method="Voronoi node density; version 1",
+                    gap_node_encoding=False,
+                    density_attention_encoding=self.x_context.use_density_encoding,
+                    sampling_geometry="per-sample per-X-variable unique observed times",
+                    density="rho=2/(delta_left+delta_right); endpoints rho=1/delta (symmetric continuation)",
+                    density_feature="s=log(mean_gap*rho); no clipping; singleton unknown encoded as zero",
+                    density_bias="-softplus(gamma_raw_head)*(s_receiver-s_source)^2; gamma initialized to 1",
+                    density_injection="independent X attention logit only; no node, Q/K or X-to-Y injection",
+                    regular_zero="per-variable uniform sampling gives s=0 and density bias=0, including endpoints",
+                    geometry_roundoff="float64 gaps; same input-resolution tolerance as legacy irgraph",
+                    x_variable_relation_rank=self.x_context.layers[0].node_dim,
+                )
+                if is_voronoi
                 else {}
             ),
         )

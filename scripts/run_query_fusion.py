@@ -29,6 +29,13 @@ VARIANTS = {
         use_density_encoding=False,
     ),
     "irgraph": dict(fusion_mode="v1", x_encoder="irgraph", allow_future_x=True),
+    "voronoi": dict(fusion_mode="v1", x_encoder="voronoi", allow_future_x=True),
+    "voronoi_no_density": dict(
+        fusion_mode="v1",
+        x_encoder="voronoi",
+        allow_future_x=True,
+        use_density_encoding=False,
+    ),
     "irgraph_no_node": dict(
         fusion_mode="v1",
         x_encoder="irgraph",

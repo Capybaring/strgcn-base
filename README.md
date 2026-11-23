@@ -250,3 +250,16 @@ bash scripts/run_irgraph_query_fusion.sh --device cuda:1  # 3 backbones x 5 data
 bash scripts/run_query_fusion.sh hipatch mimic irgraph --device cuda:1
 COMPARE=1 bash scripts/run_irgraph_query_fusion.sh hipatch physionet --device cuda:1
 ```
+
+`voronoi` uses analytic Voronoi node density and adds an independent
+`-gamma * (s_i - s_j)^2` attention relation, where `s=log(mean_gap*rho)`.
+It has no gap-node MLP or density Q/K/XY injection. Legacy `irgraph` stays
+available under its original name. See the [density formulas and protocol](docs/VORONOI_DENSITY_GRAPH_TRANSFORMER_zh.md).
+Run the new method in three separate batches (five datasets each), preserving
+configured batch sizes and seed 3407:
+
+```bash
+bash scripts/run_voronoi_query_fusion.sh tpatchgnn --device cuda:1
+bash scripts/run_voronoi_query_fusion.sh hipatch --device cuda:1
+bash scripts/run_voronoi_query_fusion.sh mtand --device cuda:1
+```

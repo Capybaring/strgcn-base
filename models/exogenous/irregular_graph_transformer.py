@@ -15,6 +15,15 @@ from models.STRGCN.STRGCNDirect import time_features
 from models.STRGCN.TimeEmbedding import TimeEmbedding
 
 
+def voronoi_density_bias(receivers, sources, log_scale):
+    """Independent [B,H,Q,S] log-Gaussian bias; regular/regular is exact zero."""
+    difference = receivers[:, None, :, None] - sources[:, None, None, :]
+    return (
+        -torch.nn.functional.softplus(log_scale)[None, :, None, None]
+        * difference.square()
+    )
+
+
 @torch.no_grad()
 def sampling_geometry(times, variables, valid):
     """Return [B,S,2] relative gaps, edge-existence flags and log densities.
@@ -76,15 +85,31 @@ class CenteredGapEncoding(nn.Module):
 class ExogenousGraphAttention(nn.Module):
     """Multihead content + continuous-time + variable-relation attention."""
 
-    def __init__(self, dim, heads, num_vars, node_dim, chunk_size, dropout):
+    def __init__(
+        self,
+        dim,
+        heads,
+        num_vars,
+        node_dim,
+        chunk_size,
+        dropout,
+        density_relation=False,
+    ):
         super().__init__()
         self.heads, self.width = heads, dim // heads
         self.chunk_size = chunk_size
         self.norm1, self.norm2 = nn.LayerNorm(dim), nn.LayerNorm(dim)
         self.q, self.k, self.v = (nn.Linear(dim, dim) for _ in range(3))
-        self.density_q, self.density_k = (
-            nn.Linear(2, dim, bias=False) for _ in range(2)
-        )
+        self.density_relation = density_relation
+        if density_relation:
+            # softplus(log(expm1(1))) = 1, independently for each head.
+            self.density_log_scale = nn.Parameter(
+                torch.full((heads,), math.log(math.expm1(1.0)))
+            )
+        else:
+            self.density_q, self.density_k = (
+                nn.Linear(2, dim, bias=False) for _ in range(2)
+            )
         self.u, self.w = (nn.Embedding(num_vars, heads * node_dim) for _ in range(2))
         self.node_dim = node_dim
         self.time_scale = nn.Parameter(torch.ones(heads))
@@ -100,15 +125,18 @@ class ExogenousGraphAttention(nn.Module):
 
     def forward(self, h, time_embedding, ids, valid, density):
         n = self.norm1(h)
-        q = self.split(self.q(n) + self.density_q(density))
-        k = self.split(self.k(n) + self.density_k(density))
+        q = self.split(self.q(n))
+        k = self.split(self.k(n))
+        if not self.density_relation:
+            q = q + self.split(self.density_q(density))
+            k = k + self.split(self.density_k(density))
         v, p = self.split(self.v(n)), self.split(time_embedding)
         u, w = self.split(self.u(ids)), self.split(self.w(ids))
         blocks = []
         for start in range(0, h.shape[1], self.chunk_size):
             end = min(start + self.chunk_size, h.shape[1])
 
-            def aggregate(q, k, v, p, u, w, ts, vs, start=start, end=end):
+            def aggregate(q, k, v, p, u, w, ts, vs, density, ds, start=start, end=end):
                 score = q[:, :, start:end] @ k.transpose(-1, -2) / math.sqrt(self.width)
                 score = score + ts[None, :, None, None] * (
                     p[:, :, start:end] @ p.transpose(-1, -2)
@@ -116,12 +144,17 @@ class ExogenousGraphAttention(nn.Module):
                 score = score + vs[None, :, None, None] * (
                     u[:, :, start:end] @ w.transpose(-1, -2)
                 ) / math.sqrt(self.node_dim)
+                if self.density_relation:
+                    score = score + voronoi_density_bias(
+                        density[:, start:end], density, ds
+                    )
                 mask = valid[:, None, start:end, None] & valid[:, None, None, :]
                 score = score.masked_fill(~mask, -torch.inf)
                 score = torch.where(mask.any(-1, keepdim=True), score, 0.0)
                 return (score.softmax(-1) * mask) @ v
 
-            args = (q, k, v, p, u, w, self.time_scale, self.var_scale)
+            ds = self.density_log_scale if self.density_relation else self.time_scale
+            args = (q, k, v, p, u, w, self.time_scale, self.var_scale, density, ds)
             if self.training and torch.is_grad_enabled():
                 message = checkpoint(aggregate, *args, use_reentrant=False)
             else:
