@@ -1,7 +1,8 @@
-"""Voronoi density as an independent observed-X graph attention relation.
+"""Voronoi density as an observed-X attention relation or node input.
 
 The legacy irgraph implementation and checkpoints retain their original meaning.
-No node MLP, density Q/K projection or X-to-Y density injection is used here.
+The node variant fuses value/variable/time/density by concatenation and an MLP;
+it never estimates density with a network or adds a density attention bias.
 """
 
 import torch
@@ -56,6 +57,7 @@ class VoronoiGraphTransformer(nn.Module):
         chunk_size=128,
         dropout=0.0,
         use_density_encoding=True,
+        density_location="attention",
     ):
         super().__init__()
         if min(dim, heads, node_dim, layers, chunk_size) < 1 or dim % 2 or dim % heads:
@@ -63,9 +65,16 @@ class VoronoiGraphTransformer(nn.Module):
                 "Graph Transformer requires even width divisible by heads and positive sizes"
             )
         self.use_density_encoding = use_density_encoding
+        if density_location not in ("attention", "node"):
+            raise ValueError("density_location must be attention or node")
+        self.density_location = density_location
         self.encoder = nn.Linear(1, dim)
         self.variable = nn.Embedding(num_vars, dim)
         self.time_embedding = TimeEmbedding(dim, "rbf")
+        if density_location == "node":
+            self.node_fusion = nn.Sequential(
+                nn.Linear(3 * dim + 1, dim), nn.SiLU(), nn.Linear(dim, dim)
+            )
         self.layers = nn.ModuleList(
             [
                 ExogenousGraphAttention(
@@ -75,7 +84,8 @@ class VoronoiGraphTransformer(nn.Module):
                     node_dim,
                     chunk_size,
                     dropout,
-                    density_relation=True,
+                    density_relation=density_location == "attention",
+                    density_projection=False,
                 )
                 for _ in range(layers)
             ]
@@ -87,7 +97,13 @@ class VoronoiGraphTransformer(nn.Module):
         if not self.use_density_encoding:
             density = torch.zeros_like(density)
         p = time_features(self.time_embedding, n.times, n.valid)
-        h = self.encoder(n.values[..., None]) + self.variable(n.variables) + p
+        value, variable = self.encoder(n.values[..., None]), self.variable(n.variables)
+        if self.density_location == "node":
+            h = self.node_fusion(
+                torch.cat([value, variable, p, density[..., None]], -1)
+            )
+        else:
+            h = value + variable + p
         h = torch.where(n.valid[..., None], h, 0.0)
         for layer in self.layers:
             h = layer(h, p, n.variables, n.valid, density)

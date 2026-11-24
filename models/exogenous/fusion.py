@@ -41,6 +41,7 @@ class DynamicLagFusion(nn.Module):
         x_node_dim=16,
         use_gap_encoding=True,
         use_density_encoding=True,
+        density_location="attention",
     ):
         super().__init__()
         if mode not in ("cross", "v1", "v2") or transfer not in (
@@ -124,12 +125,14 @@ class DynamicLagFusion(nn.Module):
                 chunk_size,
                 dropout,
                 use_density_encoding,
+                density_location,
             )
 
     def protocol(self):
         is_gcn = self.x_encoder_type == "strgcn"
         is_graph = self.x_encoder_type == "irgraph"
         is_voronoi = self.x_encoder_type == "voronoi"
+        is_density_node = is_voronoi and self.x_context.density_location == "node"
         return dict(
             x_encoder=self.x_encoder_type,
             x_visibility="all supplied observed X"
@@ -145,9 +148,9 @@ class DynamicLagFusion(nn.Module):
             if is_gcn
             else (
                 "multihead content/time/variable/density Graph Transformer"
-                if is_voronoi
+                if is_voronoi and not is_density_node
                 else "multihead content/time/variable Graph Transformer"
-                if is_graph
+                if is_graph or is_density_node
                 else "value + variable + sine-time embedding"
             ),
             x_layers=len(self.x_context.layers) if self.x_context is not None else 0,
@@ -175,13 +178,26 @@ class DynamicLagFusion(nn.Module):
                 dict(
                     density_method="Voronoi node density; version 1",
                     gap_node_encoding=False,
-                    density_attention_encoding=self.x_context.use_density_encoding,
+                    density_location=self.x_context.density_location,
+                    density_attention_encoding=self.x_context.use_density_encoding
+                    and not is_density_node,
+                    density_node_encoding=self.x_context.use_density_encoding
+                    and is_density_node,
+                    node_input_fusion="concat(value_linear,variable_embedding,time_features,s) -> Linear(3d+1,d) -> SiLU -> Linear(d,d)"
+                    if is_density_node
+                    else "value_linear + variable_embedding + time_features",
                     sampling_geometry="per-sample per-X-variable unique observed times",
                     density="rho=2/(delta_left+delta_right); endpoints rho=1/delta (symmetric continuation)",
                     density_feature="s=log(mean_gap*rho); no clipping; singleton unknown encoded as zero",
-                    density_bias="-softplus(gamma_raw_head)*(s_receiver-s_source)^2; gamma initialized to 1",
-                    density_injection="independent X attention logit only; no node, Q/K or X-to-Y injection",
-                    regular_zero="per-variable uniform sampling gives s=0 and density bias=0, including endpoints",
+                    density_bias="none"
+                    if is_density_node
+                    else "-softplus(gamma_raw_head)*(s_receiver-s_source)^2; gamma initialized to 1",
+                    density_injection="node input only; no separate density logit, Q/K or X-to-Y injection"
+                    if is_density_node
+                    else "independent X attention logit only; no node, Q/K or X-to-Y injection",
+                    regular_zero="s=0; identical to matched node-fusion no-density ablation, not old additive encoder"
+                    if is_density_node
+                    else "per-variable uniform sampling gives s=0 and density bias=0, including endpoints",
                     geometry_roundoff="float64 gaps; same input-resolution tolerance as legacy irgraph",
                     x_variable_relation_rank=self.x_context.layers[0].node_dim,
                 )

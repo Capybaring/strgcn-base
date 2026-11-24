@@ -91,8 +91,9 @@ def fusion(**kwargs):
     )
 
 
-def test_regular_exact_ablation_equivalence_no_legacy_branches():
-    m = fusion().double().eval()
+@pytest.mark.parametrize("location", ["attention", "node"])
+def test_regular_exact_ablation_equivalence_no_legacy_branches(location):
+    m = fusion(density_location=location).double().eval()
     x, f, t, ids, valid = inputs()
     x.times = torch.tensor([[0.1, 0.3, 0.5]], dtype=torch.double)
     plain = copy.deepcopy(m)
@@ -108,14 +109,27 @@ def test_regular_exact_ablation_equivalence_no_legacy_branches():
     )
     protocol = m.protocol()
     assert not protocol["gap_node_encoding"]
-    assert "independent X attention logit only" in protocol["density_injection"]
+    if location == "attention":
+        assert "independent X attention logit only" in protocol["density_injection"]
+    else:
+        assert protocol["density_node_encoding"]
+        assert not protocol["density_attention_encoding"]
+        assert protocol["density_bias"] == "none"
+        assert not any("density_log_scale" in name for name in names)
+        assert m.x_context.node_fusion[0].in_features == 3 * m.hidden + 1
 
 
 @pytest.mark.parametrize("layers", [1, 2])
+@pytest.mark.parametrize("location", ["attention", "node"])
 def test_future_x_gradients_chunk_checkpoint_padding_permutation_and_empty_identity(
     layers,
+    location,
 ):
-    m = fusion(chunk_size=1, x_layers=layers).double().train()
+    m = (
+        fusion(chunk_size=1, x_layers=layers, density_location=location)
+        .double()
+        .train()
+    )
     x, f, t, ids, valid = inputs()
     x.values.requires_grad_()
     actual = m(f, t, ids, valid, x)
@@ -123,12 +137,17 @@ def test_future_x_gradients_chunk_checkpoint_padding_permutation_and_empty_ident
     ga = torch.autograd.grad(actual.square().sum(), params, allow_unused=True)
     assert (ga[0].abs() > 1e-10).all()
     name_list = list(dict(m.x_context.named_parameters()))
-    for name in (
-        "layers.0.q.weight",
-        "layers.0.density_log_scale",
-    ):
+    density_parameter = (
+        "layers.0.density_log_scale"
+        if location == "attention"
+        else "node_fusion.0.weight"
+    )
+    for name in ("layers.0.q.weight", density_parameter):
         grad = ga[1 + name_list.index(name)]
         assert grad is not None and grad.abs().sum() > 1e-12
+    if location == "node":
+        # Last input column is the analytic scalar density, not a learned estimator.
+        assert ga[1 + name_list.index(density_parameter)][:, -1].abs().sum() > 1e-12
     m.chunk_size = 100
     for layer in m.x_context.layers:
         layer.chunk_size = 100
@@ -161,8 +180,9 @@ def test_future_x_gradients_chunk_checkpoint_padding_permutation_and_empty_ident
 
 @pytest.mark.parametrize("backbone", ["tpatchgnn", "hipatch", "mtand"])
 @pytest.mark.parametrize("dataset", ["activity", "mimic", "physionet", "ushcn"])
+@pytest.mark.parametrize("location", ["attention", "node"])
 def test_adapter_original_head_future_label_isolation_and_backward(
-    tmp_path, backbone, dataset
+    tmp_path, backbone, dataset, location
 ):
     from test_query_fusion import prepared
     from test_mtan_query_fusion import prepared as mtan_prepared
@@ -181,6 +201,7 @@ def test_adapter_original_head_future_label_isolation_and_backward(
         fusion_mode="v1",
         x_encoder="voronoi",
         allow_future_x=True,
+        density_location=location,
     )
     if backbone == "mtand":
         params.update(latent_dim=4, gen_hidden=8, te_dim=8, num_ref_points=8)
@@ -216,7 +237,9 @@ def test_adapter_original_head_future_label_isolation_and_backward(
 @pytest.mark.parametrize(
     "backbone", ["TPatchQueryFusion", "HiPatchQueryFusion", "MTANQueryFusion"]
 )
-@pytest.mark.parametrize("method", ["voronoi", "voronoi_no_density"])
+@pytest.mark.parametrize(
+    "method", ["voronoi", "voronoi_no_density", "voronoi_h", "voronoi_h_no_density"]
+)
 def test_dist_adapter(tmp_path, backbone, method):
     from test_dist_query_fusion import test_dist_methods_backward_and_label_isolation
 
@@ -225,8 +248,9 @@ def test_dist_adapter(tmp_path, backbone, method):
 
 @pytest.mark.parametrize("backbone", ["tpatchgnn", "hipatch", "mtand", None])
 @pytest.mark.parametrize("compare", [False, True])
+@pytest.mark.parametrize("variant", ["voronoi", "voronoi_h"])
 def test_three_batches_cuda_default_configs_override_and_no_overwrite(
-    tmp_path, backbone, compare
+    tmp_path, backbone, compare, variant
 ):
     data = tmp_path / "data with spaces"
     for dataset in ("activity", "mimic", "physionet", "ushcn"):
@@ -243,11 +267,22 @@ def test_three_batches_cuda_default_configs_override_and_no_overwrite(
         DRY_RUN="1",
         COMPARE=str(int(compare)),
     )
-    for key in ("GPU", "DEVICE", "CUDA_VISIBLE_DEVICES", "BATCH_SIZE"):
+    for key in (
+        "GPU",
+        "DEVICE",
+        "CUDA_VISIBLE_DEVICES",
+        "BATCH_SIZE",
+        "VORONOI_VARIANT",
+    ):
         env.pop(key, None)
     if compare:
         env["BATCH_SIZE"] = "2"
-    cmd = ["bash", str(ROOT / "scripts/run_voronoi_query_fusion.sh")]
+    script = (
+        "run_voronoi_h_query_fusion.sh"
+        if variant == "voronoi_h"
+        else "run_voronoi_query_fusion.sh"
+    )
+    cmd = ["bash", str(ROOT / "scripts" / script)]
     if backbone is not None:
         cmd.append(backbone)
     cmd += ["--device", "cuda:1"]
@@ -281,5 +316,10 @@ def test_three_batches_cuda_default_configs_override_and_no_overwrite(
             2 if compare else original["train_config"]["batch_size"]
         )
         assert c["model_config"]["model_params"]["x_encoder"] == "voronoi"
+        assert path.parent.name in (
+            (variant, f"{variant}_no_density") if compare else (variant,)
+        )
+        if variant == "voronoi_h":
+            assert c["model_config"]["model_params"]["density_location"] == "node"
     again = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=30)
     assert again.returncode != 0 and "FileExistsError" in again.stderr

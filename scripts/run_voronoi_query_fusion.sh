@@ -7,7 +7,8 @@ if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
     'Usage: bash scripts/run_voronoi_query_fusion.sh [tpatchgnn|hipatch|mtand|all] [all|activity|mimic|physionet|ushcn|dist] [--device cuda:1]' \
     'Defaults: tpatchgnn all; five sequential Voronoi runs, seed 3407, at most 30 epochs.' \
     'COMPARE=1 runs voronoi_no_density and voronoi (identical parameter layouts).' \
-    'Optional: BATCH_SIZE, TPATCH_DATA_ROOT, DIST_DATA_PATH, RUN_DIR, PYTHON, DRY_RUN=1.'
+    'Optional: BATCH_SIZE, TPATCH_DATA_ROOT, DIST_DATA_PATH, RUN_DIR, PYTHON, DRY_RUN=1.' \
+    'VORONOI_VARIANT=voronoi_h selects four-way node fusion; compare uses its matched no-density ablation.'
   exit 0
 fi
 if (( $# > 2 )); then echo 'Expected backbone and dataset; see --help' >&2; exit 2; fi
@@ -25,9 +26,14 @@ case "${2:-all}" in
   dist|DIST) datasets=(dist) ;;
   *) echo 'Unknown dataset; see --help' >&2; exit 2 ;;
 esac
-variants=(voronoi)
+variant="${VORONOI_VARIANT:-voronoi}"
+case "$variant" in
+  voronoi|voronoi_h) ;;
+  *) echo 'VORONOI_VARIANT must be voronoi or voronoi_h' >&2; exit 2 ;;
+esac
+variants=("$variant")
 case "${COMPARE:-0}" in
-  1) variants=(voronoi_no_density voronoi) ;;
+  1) variants=("${variant}_no_density" "$variant") ;;
   0) ;;
   *) echo 'COMPARE must be 0 or 1' >&2; exit 2 ;;
 esac
@@ -41,7 +47,7 @@ for dataset in "${datasets[@]}"; do
     echo "Missing dataset directory: $data_root/$dataset/processed" >&2; exit 2
   fi
 done
-output="${RUN_DIR:-results/query_fusion/voronoi_${1:-tpatchgnn}_$(date +%Y%m%d_%H%M%S)_$$}"
+output="${RUN_DIR:-results/query_fusion/${variant}_${1:-tpatchgnn}_$(date +%Y%m%d_%H%M%S)_$$}"
 command=("${PYTHON:-python}" -u scripts/run_query_fusion.py
   --data-root "$data_root" --dist-data "$dist_data" --output "$output"
   --device "$DEVICE" --backbones "${backbones[@]}" --datasets "${datasets[@]}"

@@ -94,6 +94,7 @@ class ExogenousGraphAttention(nn.Module):
         chunk_size,
         dropout,
         density_relation=False,
+        density_projection=True,
     ):
         super().__init__()
         self.heads, self.width = heads, dim // heads
@@ -101,12 +102,13 @@ class ExogenousGraphAttention(nn.Module):
         self.norm1, self.norm2 = nn.LayerNorm(dim), nn.LayerNorm(dim)
         self.q, self.k, self.v = (nn.Linear(dim, dim) for _ in range(3))
         self.density_relation = density_relation
+        self.density_projection = density_projection and not density_relation
         if density_relation:
             # softplus(log(expm1(1))) = 1, independently for each head.
             self.density_log_scale = nn.Parameter(
                 torch.full((heads,), math.log(math.expm1(1.0)))
             )
-        else:
+        elif self.density_projection:
             self.density_q, self.density_k = (
                 nn.Linear(2, dim, bias=False) for _ in range(2)
             )
@@ -127,7 +129,7 @@ class ExogenousGraphAttention(nn.Module):
         n = self.norm1(h)
         q = self.split(self.q(n))
         k = self.split(self.k(n))
-        if not self.density_relation:
+        if self.density_projection:
             q = q + self.split(self.density_q(density))
             k = k + self.split(self.density_k(density))
         v, p = self.split(self.v(n)), self.split(time_embedding)

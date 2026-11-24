@@ -263,3 +263,15 @@ bash scripts/run_voronoi_query_fusion.sh tpatchgnn --device cuda:1
 bash scripts/run_voronoi_query_fusion.sh hipatch --device cuda:1
 bash scripts/run_voronoi_query_fusion.sh mtand --device cuda:1
 ```
+
+`voronoi_h` instead concatenates the value, variable, time and analytic density
+channels, then applies a two-layer nonlinear node fusion before graph attention.
+It removes the independent density logit bias. The matched
+`voronoi_h_no_density` ablation zeros only the density channel, retaining the same
+fusion capacity. See [node encoding formulas and comparison guide (中文)](docs/VORONOI_NODE_ENCODING_zh.md).
+
+```bash
+bash scripts/run_voronoi_h_query_fusion.sh tpatchgnn --device cuda:1
+bash scripts/run_voronoi_h_query_fusion.sh hipatch --device cuda:1
+bash scripts/run_voronoi_h_query_fusion.sh mtand --device cuda:1
+```
