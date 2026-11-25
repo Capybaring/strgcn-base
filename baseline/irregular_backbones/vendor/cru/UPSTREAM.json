@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/boschresearch/Continuous-Recurrent-Units",
+  "commit": "79723e7772102cae8a78109e18d81beff9c7cac2",
+  "files": [
+    "lib/CRUCell.py",
+    "lib/CRULayer.py",
+    "lib/encoder.py",
+    "lib/decoder.py",
+    "LICENSE",
+    "3rd-party-licenses.txt"
+  ]
+}

@@ -10,7 +10,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/query_fusion_device.sh"
 
 if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
   printf '%s\n' \
-    'Usage: bash scripts/run_query_fusion.sh [tpatchgnn|hipatch|mtand] [dataset] [method] [--device cuda:1]' \
+    'Usage: bash scripts/run_query_fusion.sh [tpatchgnn|hipatch|mtand|grafiti|cru|latentode] [dataset] [method] [--device cuda:1]' \
     'Defaults: tpatchgnn activity base' \
     'Datasets: activity mimic physionet ushcn dist' \
     'Methods: original base mlp cross v1 v1_all strgcn graph irgraph irgraph_no_node irgraph_no_density voronoi voronoi_no_density voronoi_h voronoi_h_no_density v2 v2_static v2_no_transfer v1_no_time v1_no_variable' \
@@ -31,7 +31,10 @@ case "$backbone" in
   tpatchgnn) model=TPatchQueryFusion ;;
   hipatch) model=HiPatchQueryFusion ;;
   mtan|mtand) model=MTANQueryFusion ;;
-  *) echo 'Backbone must be tpatchgnn, hipatch or mtand' >&2; exit 2 ;;
+  grafiti) model=GraFITiQueryFusion ;;
+  cru) model=CRUQueryFusion ;;
+  latentode) model=LatentODEQueryFusion ;;
+  *) echo 'Backbone must be tpatchgnn, hipatch, mtand, grafiti, cru or latentode' >&2; exit 2 ;;
 esac
 case "$dataset" in
   activity|mimic|physionet|ushcn) ;;

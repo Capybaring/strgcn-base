@@ -275,3 +275,20 @@ bash scripts/run_voronoi_h_query_fusion.sh tpatchgnn --device cuda:1
 bash scripts/run_voronoi_h_query_fusion.sh hipatch --device cuda:1
 bash scripts/run_voronoi_h_query_fusion.sh mtand --device cuda:1
 ```
+
+GraFITi, full CRU and LatentODE now expose their pre-head query representations
+to the same density plugin, retaining the authors' encoder operators and output
+heads. All five datasets are configured. See the
+[integration, objectives and launch guide (中文)](docs/IRREGULAR_BACKBONE_FUSION_zh.md)
+and [pinned upstream sources](baseline/irregular_backbones/README.md).
+
+```bash
+python -m pip install -r requirements-irregular-backbones.txt
+bash scripts/run_irregular_voronoi_h.sh grafiti --device cuda:1
+bash scripts/run_irregular_voronoi_h.sh cru --device cuda:1
+bash scripts/run_irregular_voronoi_h.sh latentode --device cuda:1
+```
+
+Each command runs five datasets at seed 3407 using configured batch sizes.
+`BATCH_SIZE=16` explicitly overrides the batch size; `COMPARE=1` runs the native
+Y-history baseline, matched zero-density ablation and density plugin per dataset.

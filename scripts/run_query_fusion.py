@@ -83,7 +83,14 @@ def main():
     p.add_argument(
         "--backbones",
         nargs="+",
-        choices=["TPatchQueryFusion", "HiPatchQueryFusion", "MTANQueryFusion"],
+        choices=[
+            "TPatchQueryFusion",
+            "HiPatchQueryFusion",
+            "MTANQueryFusion",
+            "GraFITiQueryFusion",
+            "CRUQueryFusion",
+            "LatentODEQueryFusion",
+        ],
         default=["TPatchQueryFusion", "HiPatchQueryFusion"],
     )
     p.add_argument(
@@ -171,7 +178,13 @@ def main():
                     if variant == "original":
                         c["data_config"]["dataset_name"] = (
                             "AllVariableMTANDataset"
-                            if backbone == "MTANQueryFusion"
+                            if backbone
+                            in (
+                                "MTANQueryFusion",
+                                "GraFITiQueryFusion",
+                                "CRUQueryFusion",
+                                "LatentODEQueryFusion",
+                            )
                             else "AllVariablePatchDataset"
                         )
                         dp.update(
@@ -189,6 +202,19 @@ def main():
                         if backbone == "MTANQueryFusion":
                             small.update(
                                 latent_dim=4, gen_hidden=8, te_dim=8, num_ref_points=8
+                            )
+                        elif backbone in (
+                            "GraFITiQueryFusion",
+                            "CRUQueryFusion",
+                            "LatentODEQueryFusion",
+                        ):
+                            small.update(
+                                latent_dim=4,
+                                n_layer=1,
+                                ode_hidden=8,
+                                gru_units=8,
+                                num_basis=2,
+                                bandwidth=1,
                             )
                         else:
                             small["n_layer"] = 1

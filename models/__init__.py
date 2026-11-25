@@ -7,6 +7,9 @@ from .STRGCN.ExEnGraphTransformer import ExEnGraphTransformer
 
 
 def __getattr__(name):
+    if name in ('GraFITiQueryFusion', 'CRUQueryFusion', 'LatentODEQueryFusion'):
+        from .exogenous import irregular_adapters
+        return getattr(irregular_adapters, name)
     if name == 'MTANQueryFusion':
         from .exogenous.mtan_adapter import MTANQueryFusion
         return MTANQueryFusion

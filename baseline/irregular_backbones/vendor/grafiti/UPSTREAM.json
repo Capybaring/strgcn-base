@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/yalavarthivk/GraFITi",
+  "commit": "698060bb0e9385d79eaf41b7981a05390725a1e5",
+  "files": [
+    "grafiti/grafiti_layers.py",
+    "grafiti/attention.py"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/YuliaRubanova/latent_ode",
+  "commit": "c0682d4f52b806fb88d965755892eadd9783f936",
+  "files": [
+    "lib/encoder_decoder.py",
+    "lib/diffeq_solver.py",
+    "lib/ode_func.py",
+    "lib/utils.py",
+    "LICENSE"
+  ]
+}

@@ -56,9 +56,12 @@ class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
             copied = stamp() if profiling else 0.
             self.optimizer.zero_grad(set_to_none=True)
             prediction = self._predict(b)
-            loss = variable_macro_loss(prediction, b['batch_value'],
-                b['batch_pred_mask'].bool() & b['batch_pad_mask'].bool(),
-                b['batch_var_idx'], self.global_args['num_of_vals'])
+            if hasattr(self.model, 'forecast_loss'):
+                loss = self.model.forecast_loss(prediction, b)
+            else:
+                loss = variable_macro_loss(prediction, b['batch_value'],
+                    b['batch_pred_mask'].bool() & b['batch_pad_mask'].bool(),
+                    b['batch_var_idx'], self.global_args['num_of_vals'])
             if hasattr(self.model, 'auxiliary_loss'):
                 loss = loss + self.model.auxiliary_loss()
             forwarded = stamp() if profiling else 0.
