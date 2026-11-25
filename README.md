@@ -292,3 +292,21 @@ bash scripts/run_irregular_voronoi_h.sh latentode --device cuda:1
 Each command runs five datasets at seed 3407 using configured batch sizes.
 `BATCH_SIZE=16` explicitly overrides the batch size; `COMPARE=1` runs the native
 Y-history baseline, matched zero-density ablation and density plugin per dataset.
+
+`voronoi_h_4d` encodes density with a bias-free `Linear(1,d)`, concatenates four
+equal-width channels and feeds the `4d` input directly to attention Q/K/V,
+with a parallel residual projection to `d`. It has no pre-attention fusion MLP.
+`voronoi_h_4d_no_density` zeros the complete density block with identical network
+dimensions and parameter count. All six backbones are supported; existing
+`voronoi_h` retains its original MLP encoding. See the
+[formulas and matched ablation guide (中文)](docs/VORONOI_CONCAT_ENCODING_zh.md).
+
+```bash
+COMPARE=1 bash scripts/run_voronoi_h_4d_query_fusion.sh tpatchgnn --device cuda:1
+COMPARE=1 bash scripts/run_voronoi_h_4d_query_fusion.sh hipatch --device cuda:1
+COMPARE=1 bash scripts/run_voronoi_h_4d_query_fusion.sh mtand --device cuda:1
+```
+
+Replace the backbone argument with `grafiti`, `cru` or `latentode` for the three
+additional adapters. Each command runs five datasets and both variants, seed 3407,
+preserving configured batch sizes. Omit `COMPARE=1` to run only the main variant.

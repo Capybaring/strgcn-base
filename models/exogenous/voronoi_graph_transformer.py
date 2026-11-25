@@ -1,8 +1,9 @@
 """Voronoi density as an observed-X attention relation or node input.
 
 The legacy irgraph implementation and checkpoints retain their original meaning.
-The node variant fuses value/variable/time/density by concatenation and an MLP;
-it never estimates density with a network or adds a density attention bias.
+Node variants use either the legacy concatenation/MLP or equal-width channels
+concatenated directly into attention. Neither estimates density with a network
+or adds a separate density attention bias.
 """
 
 import torch
@@ -58,6 +59,7 @@ class VoronoiGraphTransformer(nn.Module):
         dropout=0.0,
         use_density_encoding=True,
         density_location="attention",
+        node_encoding="mlp",
     ):
         super().__init__()
         if min(dim, heads, node_dim, layers, chunk_size) < 1 or dim % 2 or dim % heads:
@@ -68,13 +70,21 @@ class VoronoiGraphTransformer(nn.Module):
         if density_location not in ("attention", "node"):
             raise ValueError("density_location must be attention or node")
         self.density_location = density_location
+        if node_encoding not in ("mlp", "concat"):
+            raise ValueError("node_encoding must be mlp or concat")
+        if node_encoding == "concat" and density_location != "node":
+            raise ValueError("concat node encoding requires density_location=node")
+        self.node_encoding = node_encoding
         self.encoder = nn.Linear(1, dim)
         self.variable = nn.Embedding(num_vars, dim)
         self.time_embedding = TimeEmbedding(dim, "rbf")
-        if density_location == "node":
+        if density_location == "node" and node_encoding == "mlp":
             self.node_fusion = nn.Sequential(
                 nn.Linear(3 * dim + 1, dim), nn.SiLU(), nn.Linear(dim, dim)
             )
+        elif node_encoding == "concat":
+            # Zero density must stay a zero vector, including regular grids.
+            self.density_encoder = nn.Linear(1, dim, bias=False)
         self.layers = nn.ModuleList(
             [
                 ExogenousGraphAttention(
@@ -86,8 +96,9 @@ class VoronoiGraphTransformer(nn.Module):
                     dropout,
                     density_relation=density_location == "attention",
                     density_projection=False,
+                    input_dim=4 * dim if node_encoding == "concat" and i == 0 else dim,
                 )
-                for _ in range(layers)
+                for i in range(layers)
             ]
         )
 
@@ -98,7 +109,11 @@ class VoronoiGraphTransformer(nn.Module):
             density = torch.zeros_like(density)
         p = time_features(self.time_embedding, n.times, n.valid)
         value, variable = self.encoder(n.values[..., None]), self.variable(n.variables)
-        if self.density_location == "node":
+        if self.node_encoding == "concat":
+            h = torch.cat(
+                [value, variable, p, self.density_encoder(density[..., None])], -1
+            )
+        elif self.density_location == "node":
             h = self.node_fusion(
                 torch.cat([value, variable, p, density[..., None]], -1)
             )

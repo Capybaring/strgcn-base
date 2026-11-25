@@ -1,5 +1,8 @@
 # GraFITi / CRU / LatentODE 的 Voronoi 节点密度融合
 
+这三个 backbone 也支持新的同维直接拼接 `voronoi_h_4d` 和对应无密度消融，见
+[公式及新入口](VORONOI_CONCAT_ENCODING_zh.md)。本页命令继续使用原 `voronoi_h`。
+
 本次新增 `GraFITiQueryFusion`、`CRUQueryFusion`、`LatentODEQueryFusion`。
 使用已有 `voronoi_h` 插件，不改变其密度公式、X 图编码器与 X→Y 融合机制。
 三个模型均提供 Activity、MIMIC、PhysioNet、USHCN、DIST 配置。

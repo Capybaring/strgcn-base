@@ -91,9 +91,12 @@ def fusion(**kwargs):
     )
 
 
-@pytest.mark.parametrize("location", ["attention", "node"])
-def test_regular_exact_ablation_equivalence_no_legacy_branches(location):
-    m = fusion(density_location=location).double().eval()
+@pytest.mark.parametrize(
+    "location,node_encoding",
+    [("attention", "mlp"), ("node", "mlp"), ("node", "concat")],
+)
+def test_regular_exact_ablation_equivalence_no_legacy_branches(location, node_encoding):
+    m = fusion(density_location=location, node_encoding=node_encoding).double().eval()
     x, f, t, ids, valid = inputs()
     x.times = torch.tensor([[0.1, 0.3, 0.5]], dtype=torch.double)
     plain = copy.deepcopy(m)
@@ -116,17 +119,30 @@ def test_regular_exact_ablation_equivalence_no_legacy_branches(location):
         assert not protocol["density_attention_encoding"]
         assert protocol["density_bias"] == "none"
         assert not any("density_log_scale" in name for name in names)
-        assert m.x_context.node_fusion[0].in_features == 3 * m.hidden + 1
+        if node_encoding == "mlp":
+            assert m.x_context.node_fusion[0].in_features == 3 * m.hidden + 1
+        else:
+            assert not hasattr(m.x_context, "node_fusion")
+            assert m.x_context.layers[0].q.in_features == 4 * m.hidden
 
 
 @pytest.mark.parametrize("layers", [1, 2])
-@pytest.mark.parametrize("location", ["attention", "node"])
+@pytest.mark.parametrize(
+    "location,node_encoding",
+    [("attention", "mlp"), ("node", "mlp"), ("node", "concat")],
+)
 def test_future_x_gradients_chunk_checkpoint_padding_permutation_and_empty_identity(
     layers,
     location,
+    node_encoding,
 ):
     m = (
-        fusion(chunk_size=1, x_layers=layers, density_location=location)
+        fusion(
+            chunk_size=1,
+            x_layers=layers,
+            density_location=location,
+            node_encoding=node_encoding,
+        )
         .double()
         .train()
     )
@@ -140,12 +156,14 @@ def test_future_x_gradients_chunk_checkpoint_padding_permutation_and_empty_ident
     density_parameter = (
         "layers.0.density_log_scale"
         if location == "attention"
+        else "density_encoder.weight"
+        if node_encoding == "concat"
         else "node_fusion.0.weight"
     )
     for name in ("layers.0.q.weight", density_parameter):
         grad = ga[1 + name_list.index(name)]
         assert grad is not None and grad.abs().sum() > 1e-12
-    if location == "node":
+    if location == "node" and node_encoding == "mlp":
         # Last input column is the analytic scalar density, not a learned estimator.
         assert ga[1 + name_list.index(density_parameter)][:, -1].abs().sum() > 1e-12
     m.chunk_size = 100
@@ -180,9 +198,12 @@ def test_future_x_gradients_chunk_checkpoint_padding_permutation_and_empty_ident
 
 @pytest.mark.parametrize("backbone", ["tpatchgnn", "hipatch", "mtand"])
 @pytest.mark.parametrize("dataset", ["activity", "mimic", "physionet", "ushcn"])
-@pytest.mark.parametrize("location", ["attention", "node"])
+@pytest.mark.parametrize(
+    "location,node_encoding",
+    [("attention", "mlp"), ("node", "mlp"), ("node", "concat")],
+)
 def test_adapter_original_head_future_label_isolation_and_backward(
-    tmp_path, backbone, dataset, location
+    tmp_path, backbone, dataset, location, node_encoding
 ):
     from test_query_fusion import prepared
     from test_mtan_query_fusion import prepared as mtan_prepared
@@ -202,6 +223,7 @@ def test_adapter_original_head_future_label_isolation_and_backward(
         x_encoder="voronoi",
         allow_future_x=True,
         density_location=location,
+        node_encoding=node_encoding,
     )
     if backbone == "mtand":
         params.update(latent_dim=4, gen_hidden=8, te_dim=8, num_ref_points=8)
@@ -238,7 +260,15 @@ def test_adapter_original_head_future_label_isolation_and_backward(
     "backbone", ["TPatchQueryFusion", "HiPatchQueryFusion", "MTANQueryFusion"]
 )
 @pytest.mark.parametrize(
-    "method", ["voronoi", "voronoi_no_density", "voronoi_h", "voronoi_h_no_density"]
+    "method",
+    [
+        "voronoi",
+        "voronoi_no_density",
+        "voronoi_h",
+        "voronoi_h_no_density",
+        "voronoi_h_4d",
+        "voronoi_h_4d_no_density",
+    ],
 )
 def test_dist_adapter(tmp_path, backbone, method):
     from test_dist_query_fusion import test_dist_methods_backward_and_label_isolation
@@ -248,7 +278,7 @@ def test_dist_adapter(tmp_path, backbone, method):
 
 @pytest.mark.parametrize("backbone", ["tpatchgnn", "hipatch", "mtand", None])
 @pytest.mark.parametrize("compare", [False, True])
-@pytest.mark.parametrize("variant", ["voronoi", "voronoi_h"])
+@pytest.mark.parametrize("variant", ["voronoi", "voronoi_h", "voronoi_h_4d"])
 def test_three_batches_cuda_default_configs_override_and_no_overwrite(
     tmp_path, backbone, compare, variant
 ):
@@ -278,8 +308,8 @@ def test_three_batches_cuda_default_configs_override_and_no_overwrite(
     if compare:
         env["BATCH_SIZE"] = "2"
     script = (
-        "run_voronoi_h_query_fusion.sh"
-        if variant == "voronoi_h"
+        f"run_{variant}_query_fusion.sh"
+        if variant in ("voronoi_h", "voronoi_h_4d")
         else "run_voronoi_query_fusion.sh"
     )
     cmd = ["bash", str(ROOT / "scripts" / script)]
@@ -296,6 +326,9 @@ def test_three_batches_cuda_default_configs_override_and_no_overwrite(
         tpatchgnn="TPatchQueryFusion",
         hipatch="HiPatchQueryFusion",
         mtand="MTANQueryFusion",
+        grafiti="GraFITiQueryFusion",
+        cru="CRUQueryFusion",
+        latentode="LatentODEQueryFusion",
     )[backbone or "tpatchgnn"]
     manifest = json.loads((output / "manifest.json").read_text())
     assert manifest["arguments"]["device"] == "cuda:1"
@@ -319,7 +352,13 @@ def test_three_batches_cuda_default_configs_override_and_no_overwrite(
         assert path.parent.name in (
             (variant, f"{variant}_no_density") if compare else (variant,)
         )
-        if variant == "voronoi_h":
+        if variant in ("voronoi_h", "voronoi_h_4d"):
             assert c["model_config"]["model_params"]["density_location"] == "node"
+        if variant == "voronoi_h_4d":
+            params = c["model_config"]["model_params"]
+            assert params["node_encoding"] == "concat"
+            assert params.get("use_density_encoding", True) == (
+                path.parent.name == variant
+            )
     again = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=30)
     assert again.returncode != 0 and "FileExistsError" in again.stderr

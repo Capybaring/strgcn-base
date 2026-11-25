@@ -4,11 +4,12 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/query_fusion_device.sh"
 if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
   printf '%s\n' \
-    'Usage: bash scripts/run_voronoi_query_fusion.sh [tpatchgnn|hipatch|mtand|all] [all|activity|mimic|physionet|ushcn|dist] [--device cuda:1]' \
+    'Usage: bash scripts/run_voronoi_query_fusion.sh [tpatchgnn|hipatch|mtand|grafiti|cru|latentode|all|all_six] [all|activity|mimic|physionet|ushcn|dist] [--device cuda:1]' \
     'Defaults: tpatchgnn all; five sequential Voronoi runs, seed 3407, at most 30 epochs.' \
     'COMPARE=1 runs voronoi_no_density and voronoi (identical parameter layouts).' \
     'Optional: BATCH_SIZE, TPATCH_DATA_ROOT, DIST_DATA_PATH, RUN_DIR, PYTHON, DRY_RUN=1.' \
-    'VORONOI_VARIANT=voronoi_h selects four-way node fusion; compare uses its matched no-density ablation.'
+    'VORONOI_VARIANT: voronoi (default), voronoi_h (MLP), voronoi_h_4d (direct concat); compare uses matched no-density ablation.' \
+    'all keeps the original three backbones; all_six includes GraFITi, CRU and LatentODE.'
   exit 0
 fi
 if (( $# > 2 )); then echo 'Expected backbone and dataset; see --help' >&2; exit 2; fi
@@ -17,7 +18,11 @@ case "${1:-tpatchgnn}" in
   tpatchgnn) backbones=(TPatchQueryFusion) ;;
   hipatch) backbones=(HiPatchQueryFusion) ;;
   mtan|mtand) backbones=(MTANQueryFusion) ;;
+  grafiti) backbones=(GraFITiQueryFusion) ;;
+  cru) backbones=(CRUQueryFusion) ;;
+  latentode) backbones=(LatentODEQueryFusion) ;;
   all) backbones=(TPatchQueryFusion HiPatchQueryFusion MTANQueryFusion) ;;
+  all_six) backbones=(TPatchQueryFusion HiPatchQueryFusion MTANQueryFusion GraFITiQueryFusion CRUQueryFusion LatentODEQueryFusion) ;;
   *) echo 'Unknown backbone; see --help' >&2; exit 2 ;;
 esac
 case "${2:-all}" in
@@ -28,8 +33,8 @@ case "${2:-all}" in
 esac
 variant="${VORONOI_VARIANT:-voronoi}"
 case "$variant" in
-  voronoi|voronoi_h) ;;
-  *) echo 'VORONOI_VARIANT must be voronoi or voronoi_h' >&2; exit 2 ;;
+  voronoi|voronoi_h|voronoi_h_4d) ;;
+  *) echo 'VORONOI_VARIANT must be voronoi, voronoi_h or voronoi_h_4d' >&2; exit 2 ;;
 esac
 variants=("$variant")
 case "${COMPARE:-0}" in

@@ -95,12 +95,19 @@ class ExogenousGraphAttention(nn.Module):
         dropout,
         density_relation=False,
         density_projection=True,
+        input_dim=None,
     ):
         super().__init__()
         self.heads, self.width = heads, dim // heads
         self.chunk_size = chunk_size
-        self.norm1, self.norm2 = nn.LayerNorm(dim), nn.LayerNorm(dim)
-        self.q, self.k, self.v = (nn.Linear(dim, dim) for _ in range(3))
+        input_dim = dim if input_dim is None else input_dim
+        self.norm1, self.norm2 = nn.LayerNorm(input_dim), nn.LayerNorm(dim)
+        self.q, self.k, self.v = (nn.Linear(input_dim, dim) for _ in range(3))
+        # A concatenated first-layer input can go straight into Q/K/V.
+        # Match only the parallel residual path to the attention output width.
+        self.residual = (
+            nn.Linear(input_dim, dim, bias=False) if input_dim != dim else nn.Identity()
+        )
         self.density_relation = density_relation
         self.density_projection = density_projection and not density_relation
         if density_relation:
@@ -162,8 +169,12 @@ class ExogenousGraphAttention(nn.Module):
             else:
                 message = aggregate(*args)
             blocks.append(message)
-        message = torch.cat(blocks, 2).transpose(1, 2).reshape_as(h)
-        h = h + self.dropout(self.out(message))
+        message = (
+            torch.cat(blocks, 2)
+            .transpose(1, 2)
+            .reshape(*h.shape[:2], self.heads * self.width)
+        )
+        h = self.residual(h) + self.dropout(self.out(message))
         h = h + self.dropout(self.ffn(self.norm2(h)))
         return torch.where(valid[..., None], h, 0.0)
 

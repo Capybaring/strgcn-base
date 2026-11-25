@@ -43,6 +43,21 @@ VARIANTS = {
         density_location="node",
         use_density_encoding=False,
     ),
+    "voronoi_h_4d": dict(
+        fusion_mode="v1",
+        x_encoder="voronoi",
+        allow_future_x=True,
+        density_location="node",
+        node_encoding="concat",
+    ),
+    "voronoi_h_4d_no_density": dict(
+        fusion_mode="v1",
+        x_encoder="voronoi",
+        allow_future_x=True,
+        density_location="node",
+        node_encoding="concat",
+        use_density_encoding=False,
+    ),
     "voronoi_no_density": dict(
         fusion_mode="v1",
         x_encoder="voronoi",

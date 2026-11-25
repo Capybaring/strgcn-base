@@ -1,5 +1,8 @@
 # Voronoi 密度进入节点编码（voronoi_h）
 
+本页保留原拼接后 MLP 版本。密度编码为同维向量、直接进入 attention 的新版本见
+[voronoi_h_4d 与去掉 s 的消融](VORONOI_CONCAT_ENCODING_zh.md)。
+
 本版本用于检验：密度进入节点内容是否比独立密度相似性 attention 偏置更适合当前任务。
 不预设它一定提升精度。旧 `voronoi`（attention 偏置）、`irgraph` 和历史结果保持原样。
 

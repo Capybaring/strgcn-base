@@ -17,7 +17,13 @@ from test_tpatch_records import make_data
 
 ROOT = Path(__file__).resolve().parents[1]
 MODELS = ["GraFITiQueryFusion", "CRUQueryFusion", "LatentODEQueryFusion"]
-METHODS = ["base", "voronoi_h_no_density", "voronoi_h"]
+METHODS = [
+    "base",
+    "voronoi_h_no_density",
+    "voronoi_h",
+    "voronoi_h_4d_no_density",
+    "voronoi_h_4d",
+]
 
 
 def small_params(method):

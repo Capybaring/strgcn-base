@@ -29,6 +29,7 @@ class PatchQueryFusion(PatchFusion):
         use_gap_encoding=True,
         use_density_encoding=True,
         density_location="attention",
+        node_encoding="mlp",
         **kwargs,
     ):
         super().__init__(global_args, backbone, **kwargs)
@@ -64,6 +65,7 @@ class PatchQueryFusion(PatchFusion):
                 use_gap_encoding=use_gap_encoding,
                 use_density_encoding=use_density_encoding,
                 density_location=density_location,
+                node_encoding=node_encoding,
             )
         self.register_buffer("y_ids", torch.tensor(self.target_ids))
         global_args["query_fusion_protocol"].update(

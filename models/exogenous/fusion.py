@@ -42,6 +42,7 @@ class DynamicLagFusion(nn.Module):
         use_gap_encoding=True,
         use_density_encoding=True,
         density_location="attention",
+        node_encoding="mlp",
     ):
         super().__init__()
         if mode not in ("cross", "v1", "v2") or transfer not in (
@@ -126,6 +127,7 @@ class DynamicLagFusion(nn.Module):
                 dropout,
                 use_density_encoding,
                 density_location,
+                node_encoding,
             )
 
     def protocol(self):
@@ -133,6 +135,7 @@ class DynamicLagFusion(nn.Module):
         is_graph = self.x_encoder_type == "irgraph"
         is_voronoi = self.x_encoder_type == "voronoi"
         is_density_node = is_voronoi and self.x_context.density_location == "node"
+        is_concat = is_density_node and self.x_context.node_encoding == "concat"
         return dict(
             x_encoder=self.x_encoder_type,
             x_visibility="all supplied observed X"
@@ -183,7 +186,9 @@ class DynamicLagFusion(nn.Module):
                     and not is_density_node,
                     density_node_encoding=self.x_context.use_density_encoding
                     and is_density_node,
-                    node_input_fusion="concat(value_linear,variable_embedding,time_features,s) -> Linear(3d+1,d) -> SiLU -> Linear(d,d)"
+                    node_input_fusion="concat(value_linear,variable_embedding,time_features,Linear_no_bias(1,d)(s)) -> LayerNorm(4d) -> attention Q/K/V Linear(4d,d); parallel residual Linear_no_bias(4d,d)"
+                    if is_concat
+                    else "concat(value_linear,variable_embedding,time_features,s) -> Linear(3d+1,d) -> SiLU -> Linear(d,d)"
                     if is_density_node
                     else "value_linear + variable_embedding + time_features",
                     sampling_geometry="per-sample per-X-variable unique observed times",
@@ -202,6 +207,19 @@ class DynamicLagFusion(nn.Module):
                     x_variable_relation_rank=self.x_context.layers[0].node_dim,
                 )
                 if is_voronoi
+                else {}
+            ),
+            **(
+                dict(
+                    node_encoding="concat",
+                    node_channel_dim=self.hidden,
+                    node_input_dim=4 * self.hidden,
+                    attention_hidden_dim=self.hidden,
+                    density_encoder="Linear(1,d,bias=False); s=0 maps to zero vector",
+                    pre_attention_fusion_mlp=False,
+                    no_density_ablation="zero entire density block; identical 4d network and parameters",
+                )
+                if is_concat
                 else {}
             ),
         )
