@@ -28,6 +28,23 @@ class TPatchForecastTrainer(IrrFCGraphForecastTrainer):
     def _batch(self, batch):
         return {k: v.to(self.device, non_blocking=True) for k, v in batch.items()}
 
+    def train(self, train_data_loader, *args, **kwargs):
+        from models.exogenous.voronoi_star import (
+            VoronoiStarTransformer, calibrate_voronoi_references,
+        )
+        modules = [m for m in self.model.modules() if isinstance(m, VoronoiStarTransformer)]
+        if any(not bool(m.reference_ready) for m in modules):
+            print('Calibrating Voronoi density references on training X only...', flush=True)
+        calibrate_voronoi_references(self.model, train_data_loader)
+        for module in modules:
+            fitted_pairs = int((module.reference_count > 0).sum())
+            self.global_args['query_fusion_protocol'].update(
+                density_reference_fitted_pairs=fitted_pairs,
+                density_reference_observations=int(module.reference_count.sum()),
+            )
+            print(f'Voronoi reference ready: {fitted_pairs} receiver/source variable pairs.', flush=True)
+        return super().train(train_data_loader, *args, **kwargs)
+
     def _predict(self, b):
         args = {k: b[k] for k in ('batch_timestamp', 'batch_var_idx', 'batch_pred_mask',
                                   'batch_pad_mask', 'batch_time_id', 'batch_node_type') if k in b}

@@ -9,6 +9,7 @@ from torch import nn
 from .irregular_graph_transformer import IrregularGraphTransformer
 from .strgcn_encoder import STRGCNExogenousEncoder
 from .voronoi_graph_transformer import VoronoiGraphTransformer
+from .voronoi_star import VoronoiStarTransformer
 
 
 @dataclass
@@ -63,8 +64,16 @@ class DynamicLagFusion(nn.Module):
         self.hidden, self.heads, self.dim = hidden, heads, hidden // heads
         self.mode, self.transfer, self.chunk_size = mode, transfer, chunk_size
         self.use_time_bias, self.use_variable_bias = use_time_bias, use_variable_bias
-        if x_encoder not in ("pointwise", "strgcn", "irgraph", "voronoi"):
-            raise ValueError("x_encoder must be pointwise, strgcn, irgraph or voronoi")
+        if x_encoder not in (
+            "pointwise",
+            "strgcn",
+            "irgraph",
+            "voronoi",
+            "voronoi_star",
+        ):
+            raise ValueError(
+                "x_encoder must be pointwise, strgcn, irgraph, voronoi or voronoi_star"
+            )
         if x_encoder != "pointwise" and not allow_future_x:
             raise ValueError("Unrestricted X encoding requires allow_future_x=True")
         if x_encoder != "pointwise" and mode == "v2":
@@ -129,11 +138,23 @@ class DynamicLagFusion(nn.Module):
                 density_location,
                 node_encoding,
             )
+        elif x_encoder == "voronoi_star":
+            self.x_context = VoronoiStarTransformer(
+                hidden,
+                num_variables,
+                heads,
+                x_node_dim,
+                x_layers,
+                chunk_size,
+                dropout,
+                use_density_encoding,
+            )
 
     def protocol(self):
         is_gcn = self.x_encoder_type == "strgcn"
         is_graph = self.x_encoder_type == "irgraph"
         is_voronoi = self.x_encoder_type == "voronoi"
+        is_star = self.x_encoder_type == "voronoi_star"
         is_density_node = is_voronoi and self.x_context.density_location == "node"
         is_concat = is_density_node and self.x_context.node_encoding == "concat"
         return dict(
@@ -141,13 +162,17 @@ class DynamicLagFusion(nn.Module):
             x_visibility="all supplied observed X"
             if self.allow_future_x
             else "source_time <= query_time",
-            x_internal_visibility="all supplied observed X"
+            x_internal_visibility="receiver-centered strict left/right and synchronous X timestamp groups"
+            if is_star
+            else "all supplied observed X"
             if self.x_context is not None
             else "pointwise",
             mask="valid observations only; queries never sources"
             if self.allow_future_x
             else "physical source_time <= query_time; queries never sources",
-            x_operator="STRGCN middle-stage joint relations and low-rank Chebyshev; no Sandwich"
+            x_operator="Voronoi-Graph Former; sparse star vector attention, residual and FFN"
+            if is_star
+            else "STRGCN middle-stage joint relations and low-rank Chebyshev; no Sandwich"
             if is_gcn
             else (
                 "multihead content/time/variable/density Graph Transformer"
@@ -207,6 +232,25 @@ class DynamicLagFusion(nn.Module):
                     x_variable_relation_rank=self.x_context.layers[0].node_dim,
                 )
                 if is_voronoi
+                else {}
+            ),
+            **(
+                dict(
+                    density_method="receiver-centered cross-variable Voronoi; version 1",
+                    density_attention_encoding=self.x_context.use_density_encoding,
+                    density_node_encoding=False,
+                    node_input_fusion="value_linear + variable_embedding + time_features; content-only LayerNorm(d)",
+                    sampling_geometry="strict nearest left/right timestamp groups per variable; all duplicates retained; synchronous edges including self",
+                    density="rho=1/L; L=(left_gap+right_gap)/2; one side mirrored; no positive gap unknown",
+                    density_reference="training X only; arithmetic mean rho conditional on receiver/source variable; frozen checkpoint buffers; unseen pairs masked",
+                    density_feature="s=log(rho/reference); a=log(C*r/sum(r)); S=log(C/sum(1/r)); z=[s,a,S]",
+                    density_context="mean_c MLP([a,S,variable_embedding]) over known variables; S also retained in local z",
+                    density_injection="MLP([q_i,k_j,z_i|c_j,u_i,edge_type]) -> per-head vector bias; zero-initialized vector gate",
+                    attention_normalization="per-channel softmax over star neighbors",
+                    no_density_ablation="same stars, parameters and references; bypass density branch independently of gate",
+                    reference_calibration_required=True,
+                )
+                if is_star
                 else {}
             ),
             **(

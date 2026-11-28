@@ -8,7 +8,7 @@ if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
     'Defaults: tpatchgnn all; five sequential Voronoi runs, seed 3407, at most 30 epochs.' \
     'COMPARE=1 runs voronoi_no_density and voronoi (identical parameter layouts).' \
     'Optional: BATCH_SIZE, TPATCH_DATA_ROOT, DIST_DATA_PATH, RUN_DIR, PYTHON, DRY_RUN=1.' \
-    'VORONOI_VARIANT: voronoi (default), voronoi_h (MLP), voronoi_h_4d (direct concat); compare uses matched no-density ablation.' \
+    'VORONOI_VARIANT: voronoi (default), voronoi_h (MLP), voronoi_h_4d (direct concat), voronoi_star (Voronoi-Graph Former); compare uses matched no-density ablation.' \
     'all keeps the original three backbones; all_six includes GraFITi, CRU and LatentODE.'
   exit 0
 fi
@@ -33,8 +33,8 @@ case "${2:-all}" in
 esac
 variant="${VORONOI_VARIANT:-voronoi}"
 case "$variant" in
-  voronoi|voronoi_h|voronoi_h_4d) ;;
-  *) echo 'VORONOI_VARIANT must be voronoi, voronoi_h or voronoi_h_4d' >&2; exit 2 ;;
+  voronoi|voronoi_h|voronoi_h_4d|voronoi_star) ;;
+  *) echo 'VORONOI_VARIANT must be voronoi, voronoi_h, voronoi_h_4d or voronoi_star' >&2; exit 2 ;;
 esac
 variants=("$variant")
 case "${COMPARE:-0}" in

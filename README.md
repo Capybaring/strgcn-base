@@ -310,3 +310,16 @@ COMPARE=1 bash scripts/run_voronoi_h_4d_query_fusion.sh mtand --device cuda:1
 Replace the backbone argument with `grafiti`, `cru` or `latentode` for the three
 additional adapters. Each command runs five datasets and both variants, seed 3407,
 preserving configured batch sizes. Omit `COMPARE=1` to run only the main variant.
+
+### Receiver-centered Voronoi-Graph Former
+
+`voronoi_star` uses strict bracketing and synchronous X neighbors per variable,
+training-only conditional density references, a DeepSets density context and
+zero-gated per-channel graph attention. Density does not enter node LayerNorm.
+The matched `voronoi_star_no_density` retains the same graph and parameters.
+Existing Voronoi variants remain available. See the
+[algorithm, boundary rules and calibration guide (中文)](docs/VORONOI_STAR_zh.md).
+
+```bash
+COMPARE=1 BATCH_SIZE=16 bash scripts/run_voronoi_star_query_fusion.sh hipatch mimic --device cuda:1
+```

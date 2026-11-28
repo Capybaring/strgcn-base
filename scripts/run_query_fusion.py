@@ -30,6 +30,19 @@ VARIANTS = {
     ),
     "irgraph": dict(fusion_mode="v1", x_encoder="irgraph", allow_future_x=True),
     "voronoi": dict(fusion_mode="v1", x_encoder="voronoi", allow_future_x=True),
+    "voronoi_star": dict(
+        fusion_mode="v1",
+        x_encoder="voronoi_star",
+        allow_future_x=True,
+        x_layers=2,
+    ),
+    "voronoi_star_no_density": dict(
+        fusion_mode="v1",
+        x_encoder="voronoi_star",
+        allow_future_x=True,
+        use_density_encoding=False,
+        x_layers=2,
+    ),
     "voronoi_h": dict(
         fusion_mode="v1",
         x_encoder="voronoi",
